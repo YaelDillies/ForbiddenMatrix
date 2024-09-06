@@ -18,9 +18,9 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-title: Arithmetic Progressions - Almost Periodicity
+title: Forbidden Matrix
 #email: your-email@example.com
-description: A digitisation of the Kelley-Meka bound on Roth numbers
+description: A digitisation of forbidden matrix theory
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://YaelDillies.github.io/ForbiddenMatrix/" # the base hostname & protocol for your site, e.g. http://example.com
 #twitter_username: jekyllrb
