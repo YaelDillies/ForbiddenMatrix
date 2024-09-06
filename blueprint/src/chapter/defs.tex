@@ -1,2 +1,23 @@
 \chapter{Definitions}
 \label{chap:defs}
+
+%
+\begin{definition}[Matrix containment]
+  \label{def:containment}
+  \uses{}
+%  \lean{} for lean declaraion
+  % \leanok
+%Definition
+An $n$-by-$m$ binary matrix $M$ \textit{contains} an $n'$-by-$m'$ matrix $P$ if
+there are integers $1 \leq i_1 \leq \ldots \leq i_{n'} \leq n$ and $1 \leq j_1 \leq \ldots \leq j_{m'} \leq m$ such that
+for all $i' \in [n'], j' \in [m']$, $P(i',j') = 1$ implies $M(i_{i'},j_{j'}) = 1$. If $M$ does not contain $P$, then $M$ \textit{avoids} $P$.
+\end{definition}
+
+\begin{definition}[Extremal Function]
+  \label{def:extremal function}
+  \uses{}
+%  \lean{}
+  % \leanok
+Given two integers $n,m$, we denote $Ex(P,n,m)$ as the maximum number of 1's in a matrix avoiding a matrix $P$.
+We also define $Ex(P,n) = Ex(P,n,n)$.
+\end{definition}
