@@ -1,0 +1,29 @@
+% This file makes the web version of the blueprint.
+
+\documentclass{report}
+
+\usepackage{amsmath,amsfonts,amsthm,amssymb}
+\usepackage{hyperref}
+\usepackage{relsize}
+\usepackage{graphicx}
+\DeclareGraphicsExtensions{.svg,.png,.jpg}
+\usepackage[capitalize]{cleveref}
+\usepackage[showmore, dep_graph, coverage, project=../../]{blueprint}
+
+\usepackage{tikz-cd}
+\usepackage{tikz}
+
+\input{preamble/common}
+\input{preamble/web}
+
+%\home{https://github.com/YaelDillies/ForbiddenMatrix/}
+\github{https://github.com/YaelDillies/ForbiddenMatrix/}
+\dochome{https://YaelDillies.github.io/ForbiddenMatrix/docs}
+
+\title{ForbiddenMatrix}
+\author{Yaël Dillies, Sorrachai Yingchareonthawornchai}
+
+\begin{document}
+\maketitle
+\input{chapter/main}
+\end{document}
