@@ -1,17 +1,7 @@
-import Mathlib.Algebra.Order.Monoid.Canonical.Defs
-import Mathlib.Algebra.Order.Group.Nat
-import Mathlib.Data.Finset.Lattice
-import Mathlib.Data.Fintype.Basic
-import Mathlib.Data.Fintype.Pi
-import Mathlib.Data.Fin.VecNotation
-import Mathlib.Data.Fintype.Prod
-import Mathlib.Order.Fin.Basic
-import Mathlib.Tactic.Common
 import Mathlib.Combinatorics.Pigeonhole
-import Mathlib.Data.Set.Finite
-import Mathlib.Data.Set.Card
-
-
+import Mathlib.Data.Int.Interval
+import Mathlib.Data.Nat.Lattice
+import Mathlib.Logic.Equiv.Fin
 
 namespace Finset
 variable {ι α : Type*} [CanonicallyLinearOrderedAddCommMonoid α] {s : Finset ι} {f : ι → α}
@@ -74,12 +64,10 @@ def PatternOne : Fin 1 → Fin 1 → Prop :=  fun _ : Fin 1 =>  fun _ : Fin 1 =>
 def IdentityB (n : ℕ ) (i j : Fin n) : Bool := i = j
 def PatternOneB : Fin 1 → Fin 1 → Bool :=  fun _ : Fin 1 =>  fun _ : Fin 1 => true
 
-#check Identity
-#check PatternOne
 -- example : PatternOne = (Identity 1) := by
 
-#eval exB PatternOneB 4
-#eval exB (IdentityB 2) 4
+-- #eval exB PatternOneB 4
+-- #eval exB (IdentityB 2) 4
 
 lemma PatternOneIsIdentity : PatternOne = (Identity 1) := by
   ext -- apply function extensionality for all a F(a) = G(a) => F = G
@@ -97,11 +85,12 @@ lemma exPatternOne (n : ℕ ): ex PatternOne n = 0 := by
   simp [Contains]
   refine ⟨fun _ ↦ i, by simp [StrictMono], ![j], by simp [StrictMono], by simp [Mij]⟩
 
-example (n : ℕ ): ex (Identity 1) n = 0 := by
+example (n : ℕ) : ex (Identity 1) n = 0 := by
     rw [← PatternOneIsIdentity]
     exact exPatternOne n
 
- theorem  exIdentity2 (n : ℕ ): ex (Identity 2) n ≤ 2*n-1 := by
+set_option diagnostics true
+theorem exIdentity2 (n : ℕ) : ex (Identity 2) n ≤ 2 * n - 1 := by
   classical
   rw [ex]
   rw [exRect]
@@ -111,27 +100,22 @@ example (n : ℕ ): ex (Identity 1) n = 0 := by
   simp
   intro M_has_two_n_points
 
-  let f : Fin n × Fin n → ℤ := fun ⟨i,j⟩  ↦  i - j
-  let s : Finset (Fin n × Fin n):= {(i,j): Fin n × Fin n | M i j}
-  let t : Finset (ℤ) := Icc (-n + 1) (n-1)
+  let f : Fin n × Fin n → ℤ := fun ⟨i, j⟩ ↦ i - j
+  let s : Finset (Fin n × Fin n) := {(i, j) : Fin n × Fin n | M i j}
+  let t : Finset ℤ := Icc (-n + 1) (n - 1)
   let k := 1
 
-  have hf : ∀ a ∈ s, f a ∈ t := by
-    intro a ha
-    simp [f,t]
-    omega
+  have hf ⦃a⦄ (ha : a ∈ s) : f a ∈ t := by simp [f, t]; omega
 
   have hn : t.card * k < s.card := by
-    simp [k,s,t]
+    simp [k, s, t]
     cases n
+    · contradiction
     simp
-    contradiction
-    norm_cast
+    rw [← Nat.cast_add_one, ← Nat.cast_add, Int.toNat_ofNat]
+    omega
 
   have := exists_lt_card_fiber_of_mul_lt_card_of_maps_to hf hn
+  sorry
 
-
-
-example (n k : ℕ ): ex (Identity k) n ≤ (2*n-1)*k := by sorry
-
---
+example (n k : ℕ) : ex (Identity k) n ≤ (2*n-1)*k := by sorry
