@@ -101,7 +101,8 @@ example (n : ℕ ): ex (Identity 1) n = 0 := by
     rw [← PatternOneIsIdentity]
     exact exPatternOne n
 
-theorem exIdentity2 (n : ℕ ): ex (Identity 2) n ≤ 2*n-1 := by
+ theorem  exIdentity2 (n : ℕ ): ex (Identity 2) n ≤ 2*n-1 := by
+  classical
   rw [ex]
   rw [exRect]
   simp
@@ -109,7 +110,27 @@ theorem exIdentity2 (n : ℕ ): ex (Identity 2) n ≤ 2*n-1 := by
   contrapose
   simp
   intro M_has_two_n_points
-  sorry
+
+  let f : Fin n × Fin n → ℤ := fun ⟨i,j⟩  ↦  i - j
+  let s : Finset (Fin n × Fin n):= {(i,j): Fin n × Fin n | M i j}
+  let t : Finset (ℤ) := Icc (-n + 1) (n-1)
+  let k := 1
+
+  have hf : ∀ a ∈ s, f a ∈ t := by
+    intro a ha
+    simp [f,t]
+    omega
+
+  have hn : t.card * k < s.card := by
+    simp [k,s,t]
+    cases n
+    simp
+    contradiction
+    norm_cast
+
+  have := exists_lt_card_fiber_of_mul_lt_card_of_maps_to hf hn
+
+
 
 example (n k : ℕ ): ex (Identity k) n ≤ (2*n-1)*k := by sorry
 
