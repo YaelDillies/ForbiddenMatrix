@@ -2,6 +2,10 @@ import Mathlib.Combinatorics.Pigeonhole
 import Mathlib.Data.Int.Interval
 import Mathlib.Data.Nat.Lattice
 import Mathlib.Logic.Equiv.Fin
+import Mathlib.Data.Finset.Sort
+
+
+
 
 namespace Finset
 variable {ι α : Type*} [CanonicallyLinearOrderedAddCommMonoid α] {s : Finset ι} {f : ι → α}
@@ -116,6 +120,50 @@ theorem exIdentity2 (n : ℕ) : ex (Identity 2) n ≤ 2 * n - 1 := by
     omega
 
   have := exists_lt_card_fiber_of_mul_lt_card_of_maps_to hf hn
-  sorry
+  obtain ⟨ y,hy,hy' ⟩ := this
+  simp only [k] at  hy'
+  rw [one_lt_card] at hy'
+  simp only [mem_filter, ne_eq] at hy'
+  obtain ⟨ a,ha,b,hb,hab ⟩  := hy'
+  obtain ⟨ ha,ha'⟩ := ha
+  obtain ⟨ hb,hb'⟩ := hb
+
+  have abneq: ¬ (a.1 = b.1 ∧ a.2 = b.2) := by aesop
+  have dominance: (a.1 < b.1 ∧ a.2 < b.2) ∨ (a.1 > b.1 ∧ a.2 > b.2) := by
+    rw [← ha'] at hb'
+    simp only [f] at hb'
+    rw [sub_eq_sub_iff_add_eq_add] at hb'
+    omega
+  simp [Contains]
+
+  cases dominance with
+  | inl halb =>
+    obtain ⟨a1leqb1, a2leqb2⟩  := halb
+    let fM : Fin 2 → Fin n := ![a.1, b.1]
+    let gM : Fin 2 → Fin n := ![a.2, b.2]
+    have monof: StrictMono fM := by
+      simp [StrictMono]
+      intro a_fM b_fM aleqb_fM
+      simp [fM]
+      have  abeqfm: a_fM = 0 ∧ b_fM = 1 := by omega
+      obtain ⟨a_fM_eq_zero, b_fM_eq_one⟩ := abeqfm
+      simp [a_fM_eq_zero,b_fM_eq_one,a1leqb1]
+    have monog: StrictMono gM := by
+      simp [StrictMono]
+      intro a_fM b_fM aleqb_fM
+      simp [gM]
+      have  abeqfm: a_fM = 0 ∧ b_fM = 1 := by omega
+      obtain ⟨a_fM_eq_zero, b_fM_eq_one⟩ := abeqfm
+      simp [a_fM_eq_zero,b_fM_eq_one,a2leqb2]
+    refine ⟨fM, monof, gM, monog, by
+    intro a' b' idab
+    simp [Identity] at idab
+    rw [idab]
+    simp [fM, gM]
+    subst b'
+    ⟩
+
+
+  | inr hbla =>
 
 example (n k : ℕ) : ex (Identity k) n ≤ (2*n-1)*k := by sorry
