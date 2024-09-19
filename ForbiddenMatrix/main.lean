@@ -3,6 +3,8 @@ import Mathlib.Data.Int.Interval
 import Mathlib.Data.Nat.Lattice
 import Mathlib.Logic.Equiv.Fin
 import Mathlib.Data.Finset.Sort
+import Mathlib.Data.Set.Basic
+import Mathlib.Tactic.FinCases
 
 
 
@@ -93,8 +95,7 @@ example (n : ℕ) : ex (Identity 1) n = 0 := by
     rw [← PatternOneIsIdentity]
     exact exPatternOne n
 
-set_option diagnostics true
-theorem exIdentity2 (n : ℕ) : ex (Identity 2) n ≤ 2 * n - 1 := by
+theorem  exIdentity2 (n : ℕ ): ex (Identity 2) n ≤ 2*n-1 := by
   classical
   rw [ex]
   rw [exRect]
@@ -105,8 +106,16 @@ theorem exIdentity2 (n : ℕ) : ex (Identity 2) n ≤ 2 * n - 1 := by
   intro M_has_two_n_points
 
   let f : Fin n × Fin n → ℤ := fun ⟨i, j⟩ ↦ i - j
-  let s : Finset (Fin n × Fin n) := {(i, j) : Fin n × Fin n | M i j}
+  let s := (filter (fun (i,j) ↦ M i j) univ)
+  have : s.card > 2*n-1 := by aesop
   let t : Finset ℤ := Icc (-n + 1) (n - 1)
+  have tcardeq2nm1: t.card = 2*n -1 := by
+    simp [t]
+    cases n
+    · contradiction
+    simp
+    rw [← Nat.cast_add_one, ← Nat.cast_add, Int.toNat_ofNat]
+    omega
   let k := 1
 
   have hf ⦃a⦄ (ha : a ∈ s) : f a ∈ t := by simp [f, t]; omega
@@ -128,6 +137,9 @@ theorem exIdentity2 (n : ℕ) : ex (Identity 2) n ≤ 2 * n - 1 := by
   obtain ⟨ ha,ha'⟩ := ha
   obtain ⟨ hb,hb'⟩ := hb
 
+  have ⦃x⦄ (ha : x ∈ s): M x.1 x.2 := by aesop
+  have hmaa: M a.1 a.2 := by aesop
+  have hmbb: M b.1 b.2 := by aesop
   have abneq: ¬ (a.1 = b.1 ∧ a.2 = b.2) := by aesop
   have dominance: (a.1 < b.1 ∧ a.2 < b.2) ∨ (a.1 > b.1 ∧ a.2 > b.2) := by
     rw [← ha'] at hb'
@@ -155,15 +167,46 @@ theorem exIdentity2 (n : ℕ) : ex (Identity 2) n ≤ 2 * n - 1 := by
       have  abeqfm: a_fM = 0 ∧ b_fM = 1 := by omega
       obtain ⟨a_fM_eq_zero, b_fM_eq_one⟩ := abeqfm
       simp [a_fM_eq_zero,b_fM_eq_one,a2leqb2]
+
     refine ⟨fM, monof, gM, monog, by
     intro a' b' idab
     simp [Identity] at idab
     rw [idab]
     simp [fM, gM]
     subst b'
+    fin_cases a';simp
+    exact hmaa
+    exact hmbb
+    ⟩
+  | inr hbla =>
+    obtain ⟨a1leqb1, a2leqb2⟩  := hbla
+    let fM : Fin 2 → Fin n := ![b.1, a.1]
+    let gM : Fin 2 → Fin n := ![b.2, a.2]
+    have monof: StrictMono fM := by
+      simp [StrictMono]
+      intro a_fM b_fM aleqb_fM
+      simp [fM]
+      have  abeqfm: a_fM = 0 ∧ b_fM = 1 := by omega
+      obtain ⟨a_fM_eq_zero, b_fM_eq_one⟩ := abeqfm
+      simp [a_fM_eq_zero,b_fM_eq_one,a1leqb1]
+    have monog: StrictMono gM := by
+      simp [StrictMono]
+      intro a_fM b_fM aleqb_fM
+      simp [gM]
+      have  abeqfm: a_fM = 0 ∧ b_fM = 1 := by omega
+      obtain ⟨a_fM_eq_zero, b_fM_eq_one⟩ := abeqfm
+      simp [a_fM_eq_zero,b_fM_eq_one,a2leqb2]
+
+    refine ⟨fM, monof, gM, monog, by
+    intro a' b' idab
+    simp [Identity] at idab
+    rw [idab]
+    simp [fM, gM]
+    subst b'
+    fin_cases a';simp
+    exact hmbb
+    exact hmaa
     ⟩
 
-
-  | inr hbla =>
 
 example (n k : ℕ) : ex (Identity k) n ≤ (2*n-1)*k := by sorry
