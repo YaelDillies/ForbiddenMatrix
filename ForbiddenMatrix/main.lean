@@ -1,13 +1,11 @@
+import Mathlib.Algebra.CharP.Defs
+import Mathlib.Algebra.Order.Group.PosPart
 import Mathlib.Combinatorics.Pigeonhole
 import Mathlib.Data.Int.Interval
 import Mathlib.Data.Nat.Lattice
+import Mathlib.Data.ZMod.Defs
 import Mathlib.Logic.Equiv.Fin
-import Mathlib.Data.Finset.Sort
-import Mathlib.Data.Set.Basic
 import Mathlib.Tactic.FinCases
-
-
-
 
 namespace Finset
 variable {ι α : Type*} [CanonicallyLinearOrderedAddCommMonoid α] {s : Finset ι} {f : ι → α}
@@ -16,7 +14,7 @@ variable {ι α : Type*} [CanonicallyLinearOrderedAddCommMonoid α] {s : Finset 
 
 end Finset
 
-open Finset
+open Finset Set
 
 section Contains
 variable {α β γ δ : Type*} [Preorder α] [Preorder β] [Preorder γ] [Preorder δ]
@@ -38,37 +36,37 @@ instance {P : α → β → Bool} {M : γ → δ → Bool}
   inferInstanceAs (Decidable (∃ f : α → γ, StrictMono f ∧ ∃ g : β → δ, StrictMono g ∧ ∀ a b, P a b → M (f a) (g b)))
 
 /- lemma reflectContain (M : γ → δ → Prop) : Contains M M :=
-  ⟨_,_⟩
-example (a b : ℕ ) : a + a *b = (b+1) * a := by
+  ⟨_, _⟩
+example (a b : ℕ) : a + a *b = (b+1) * a := by
   rw [Nat.right_distrib]
 -/
 end Contains
 
 variable {α β : Type*} [Preorder α] [Preorder β]
 open scoped Classical in noncomputable def exRect (P : α → β → Prop) (n : ℕ) (m : ℕ) : ℕ :=
-  sup {M : Fin n → Fin m → Prop | ¬ Contains P M} fun M ↦ card {(i,j): Fin n × Fin m | M i j}
+  sup {M : Fin n → Fin m → Prop | ¬ Contains P M} fun M ↦ card {(i, j) : Fin n × Fin m | M i j}
 
 def exRectB [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
     [DecidableRel (· < · : α → α → Prop)] [DecidableRel (· < · : β → β → Prop)]
     (P : α → β → Bool) (n : ℕ) (m : ℕ) : ℕ :=
   sup {M : Fin n → Fin m → Bool | ¬ ContainsB P M} fun M ↦ card {ij : Fin n × Fin m | M ij.1 ij.2}
 
-open scoped Classical in noncomputable def ex (P : α → β → Prop) (n : ℕ)  : ℕ := exRect P n n
+open scoped Classical in noncomputable def ex (P : α → β → Prop) (n : ℕ) : ℕ := exRect P n n
 
 def exB [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
     [DecidableRel (· < · : α → α → Prop)] [DecidableRel (· < · : β → β → Prop)]
     (P : α → β → Bool) (n : ℕ) : ℕ :=
   exRectB P n n
 
--- def trivialPattern : (α → β → Prop)  := [1,1,1]
+-- def trivialPattern : (α → β → Prop) := [1, 1, 1]
 -- λ x : nat ↦ x + 5
 -- variable {n : ℕ }
-def Identity (n : ℕ ) (i j : Fin n) : Prop := i = j
-def TwoOneY  (i _ : Fin 2) : Prop := i = 0
-def PatternOne : Fin 1 → Fin 1 → Prop :=  fun _ : Fin 1 =>  fun _ : Fin 1 => true
+def Identity (n : ℕ) (i j : Fin n) : Prop := i = j
+def TwoOneY (i _ : Fin 2) : Prop := i = 0
+def PatternOne : Fin 1 → Fin 1 → Prop := fun _ : Fin 1 => fun _ : Fin 1 => true
 
-def IdentityB (n : ℕ ) (i j : Fin n) : Bool := i = j
-def PatternOneB : Fin 1 → Fin 1 → Bool :=  fun _ : Fin 1 =>  fun _ : Fin 1 => true
+def IdentityB (n : ℕ) (i j : Fin n) : Bool := i = j
+def PatternOneB : Fin 1 → Fin 1 → Bool := fun _ : Fin 1 => fun _ : Fin 1 => true
 
 -- example : PatternOne = (Identity 1) := by
 
@@ -77,10 +75,10 @@ def PatternOneB : Fin 1 → Fin 1 → Bool :=  fun _ : Fin 1 =>  fun _ : Fin 1 =
 
 lemma PatternOneIsIdentity : PatternOne = (Identity 1) := by
   ext -- apply function extensionality for all a F(a) = G(a) => F = G
-  simp [Identity,PatternOne]
+  simp [Identity, PatternOne]
   exact Subsingleton.elim ..
 
-lemma exPatternOne (n : ℕ ): ex PatternOne n = 0 := by
+lemma exPatternOne (n : ℕ) : ex PatternOne n = 0 := by
   rw [ex]
   rw [exRect]
   simp [filter_eq_empty_iff]
@@ -92,10 +90,10 @@ lemma exPatternOne (n : ℕ ): ex PatternOne n = 0 := by
   refine ⟨fun _ ↦ i, by simp [StrictMono], ![j], by simp [StrictMono], by simp [Mij]⟩
 
 example (n : ℕ) : ex (Identity 1) n = 0 := by
-    rw [← PatternOneIsIdentity]
-    exact exPatternOne n
+  rw [← PatternOneIsIdentity]
+  exact exPatternOne n
 
-theorem  exIdentity2 (n : ℕ ): ex (Identity 2) n ≤ 2*n-1 := by
+theorem exIdentity2 (n : ℕ) : ex (Identity 2) n ≤ 2*n-1 := by
   classical
   rw [ex]
   rw [exRect]
@@ -106,10 +104,10 @@ theorem  exIdentity2 (n : ℕ ): ex (Identity 2) n ≤ 2*n-1 := by
   intro M_has_two_n_points
 
   let f : Fin n × Fin n → ℤ := fun ⟨i, j⟩ ↦ i - j
-  let s := (filter (fun (i,j) ↦ M i j) univ)
+  let s := (filter (fun (i, j) ↦ M i j) univ)
   have : s.card > 2*n-1 := by aesop
   let t : Finset ℤ := Icc (-n + 1) (n - 1)
-  have tcardeq2nm1: t.card = 2*n -1 := by
+  have tcardeq2nm1 : t.card = 2*n -1 := by
     simp [t]
     cases n
     · contradiction
@@ -128,20 +126,19 @@ theorem  exIdentity2 (n : ℕ ): ex (Identity 2) n ≤ 2*n-1 := by
     rw [← Nat.cast_add_one, ← Nat.cast_add, Int.toNat_ofNat]
     omega
 
-  have := exists_lt_card_fiber_of_mul_lt_card_of_maps_to hf hn
-  obtain ⟨ y,hy,hy' ⟩ := this
-  simp only [k] at  hy'
+  obtain ⟨y, hy, hy'⟩ := exists_lt_card_fiber_of_mul_lt_card_of_maps_to hf hn
+  simp only [k] at hy'
   rw [one_lt_card] at hy'
   simp only [mem_filter, ne_eq] at hy'
-  obtain ⟨ a,ha,b,hb,hab ⟩  := hy'
-  obtain ⟨ ha,ha'⟩ := ha
-  obtain ⟨ hb,hb'⟩ := hb
+  obtain ⟨a, ha, b, hb, hab⟩ := hy'
+  obtain ⟨ha, ha'⟩ := ha
+  obtain ⟨hb, hb'⟩ := hb
 
-  have ⦃x⦄ (ha : x ∈ s): M x.1 x.2 := by aesop
-  have hmaa: M a.1 a.2 := by aesop
-  have hmbb: M b.1 b.2 := by aesop
-  have abneq: ¬ (a.1 = b.1 ∧ a.2 = b.2) := by aesop
-  have dominance: (a.1 < b.1 ∧ a.2 < b.2) ∨ (a.1 > b.1 ∧ a.2 > b.2) := by
+  have ⦃x⦄ (ha : x ∈ s) : M x.1 x.2 := by aesop
+  have hmaa : M a.1 a.2 := by aesop
+  have hmbb : M b.1 b.2 := by aesop
+  have abneq : ¬ (a.1 = b.1 ∧ a.2 = b.2) := by aesop
+  have dominance : (a.1 < b.1 ∧ a.2 < b.2) ∨ (a.1 > b.1 ∧ a.2 > b.2) := by
     rw [← ha'] at hb'
     simp only [f] at hb'
     rw [sub_eq_sub_iff_add_eq_add] at hb'
@@ -150,23 +147,23 @@ theorem  exIdentity2 (n : ℕ ): ex (Identity 2) n ≤ 2*n-1 := by
 
   cases dominance with
   | inl halb =>
-    obtain ⟨a1leqb1, a2leqb2⟩  := halb
+    obtain ⟨a1leqb1, a2leqb2⟩ := halb
     let fM : Fin 2 → Fin n := ![a.1, b.1]
     let gM : Fin 2 → Fin n := ![a.2, b.2]
-    have monof: StrictMono fM := by
+    have monof : StrictMono fM := by
       simp [StrictMono]
       intro a_fM b_fM aleqb_fM
       simp [fM]
-      have  abeqfm: a_fM = 0 ∧ b_fM = 1 := by omega
+      have abeqfm : a_fM = 0 ∧ b_fM = 1 := by omega
       obtain ⟨a_fM_eq_zero, b_fM_eq_one⟩ := abeqfm
-      simp [a_fM_eq_zero,b_fM_eq_one,a1leqb1]
-    have monog: StrictMono gM := by
+      simp [a_fM_eq_zero, b_fM_eq_one, a1leqb1]
+    have monog : StrictMono gM := by
       simp [StrictMono]
       intro a_fM b_fM aleqb_fM
       simp [gM]
-      have  abeqfm: a_fM = 0 ∧ b_fM = 1 := by omega
+      have abeqfm : a_fM = 0 ∧ b_fM = 1 := by omega
       obtain ⟨a_fM_eq_zero, b_fM_eq_one⟩ := abeqfm
-      simp [a_fM_eq_zero,b_fM_eq_one,a2leqb2]
+      simp [a_fM_eq_zero, b_fM_eq_one, a2leqb2]
 
     refine ⟨fM, monof, gM, monog, by
     intro a' b' idab
@@ -177,25 +174,25 @@ theorem  exIdentity2 (n : ℕ ): ex (Identity 2) n ≤ 2*n-1 := by
     fin_cases a';simp
     exact hmaa
     exact hmbb
-    ⟩
+   ⟩
   | inr hbla =>
-    obtain ⟨a1leqb1, a2leqb2⟩  := hbla
+    obtain ⟨a1leqb1, a2leqb2⟩ := hbla
     let fM : Fin 2 → Fin n := ![b.1, a.1]
     let gM : Fin 2 → Fin n := ![b.2, a.2]
-    have monof: StrictMono fM := by
+    have monof : StrictMono fM := by
       simp [StrictMono]
       intro a_fM b_fM aleqb_fM
       simp [fM]
-      have  abeqfm: a_fM = 0 ∧ b_fM = 1 := by omega
+      have abeqfm : a_fM = 0 ∧ b_fM = 1 := by omega
       obtain ⟨a_fM_eq_zero, b_fM_eq_one⟩ := abeqfm
-      simp [a_fM_eq_zero,b_fM_eq_one,a1leqb1]
-    have monog: StrictMono gM := by
+      simp [a_fM_eq_zero, b_fM_eq_one, a1leqb1]
+    have monog : StrictMono gM := by
       simp [StrictMono]
       intro a_fM b_fM aleqb_fM
       simp [gM]
-      have  abeqfm: a_fM = 0 ∧ b_fM = 1 := by omega
+      have abeqfm : a_fM = 0 ∧ b_fM = 1 := by omega
       obtain ⟨a_fM_eq_zero, b_fM_eq_one⟩ := abeqfm
-      simp [a_fM_eq_zero,b_fM_eq_one,a2leqb2]
+      simp [a_fM_eq_zero, b_fM_eq_one, a2leqb2]
 
     refine ⟨fM, monof, gM, monog, by
     intro a' b' idab
@@ -206,7 +203,13 @@ theorem  exIdentity2 (n : ℕ ): ex (Identity 2) n ≤ 2*n-1 := by
     fin_cases a';simp
     exact hmbb
     exact hmaa
-    ⟩
+   ⟩
 
+lemma injOn_aux (n : ℕ) [NeZero n] :
+    InjOn (fun z : ℤ ↦ ((↑(z⁺), ↑(z⁻)) : Fin n × Fin n)) (Ioo (-n) n) :=
+  ((CharP.intCast_injOn_Ico _ n).prodMap (CharP.intCast_injOn_Ico _ n)).comp
+    posPart_negPart_injective.injOn fun z hz ↦
+    ⟨⟨posPart_nonneg _, by simpa [NeZero.pos] using hz.2⟩,
+      ⟨negPart_nonneg _, by simpa [NeZero.pos] using hz.1⟩⟩
 
 example (n k : ℕ) : ex (Identity k) n ≤ (2*n-1)*k := by sorry
