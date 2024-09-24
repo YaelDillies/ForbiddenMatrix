@@ -93,7 +93,86 @@ example (n : ℕ) : ex (Identity 1) n = 0 := by
   rw [← PatternOneIsIdentity]
   exact exPatternOne n
 
-theorem exIdentity2 (n : ℕ) : ex (Identity 2) n ≤ 2*n-1 := by
+lemma injOn_aux (n : ℕ) [NeZero n] :
+    InjOn (fun z : ℤ ↦ ((↑(z⁺), ↑(z⁻)) : Fin n × Fin n)) (Set.Ioo (-n) n : Set ℤ) :=
+  ((CharP.intCast_injOn_Ico _ n).prodMap (CharP.intCast_injOn_Ico _ n)).comp
+    posPart_negPart_injective.injOn fun z hz ↦
+    ⟨⟨posPart_nonneg _, by simpa [NeZero.pos] using hz.2⟩,
+      ⟨negPart_nonneg _, by simpa [NeZero.pos] using hz.1⟩⟩
+
+--set_option diagnostics true
+lemma  exIdentity2LB  (n : ℕ )[hnz: NeZero n]: 2*n-1 ≤ ex (Identity 2) n  := by
+  rw [ex,exRect]
+  rw [Finset.le_sup_iff]
+  simp
+  let  M (i j : Fin n) :  Prop := i.val = 0 ∨ j.val = 0
+  have MavI2 : ¬Contains (Identity 2) M := by
+    by_contra h
+    simp [Contains] at h
+    obtain ⟨ f,hf,g, hg, pmap ⟩ := h
+    simp [M, Identity] at pmap
+    simp [StrictMono] at hf hg
+    have f1g0: 0 < (f 1).val := by
+      by_contra f0
+      simp at f0
+      have fmono: (f 0).val < (f 1).val := by simp [hf]
+      rw [f0] at fmono
+      tauto
+    have g1g0: 0 < (g 1).val := by
+      by_contra g0
+      simp at g0
+      have gmono: (g 0).val < (g 1).val := by simp [hg]
+      rw [g0] at gmono
+      tauto
+    specialize pmap 1
+    cases' pmap
+    aesop;aesop
+
+  --let t := filter (fun (i,j) ↦ M i j) univ
+  let t := filter (fun x ↦ M x.1 x.2 : Fin n × Fin n → Prop) univ
+  have Mhastwon : 2*n  ≤ t.card +1 := by
+    simp [t, M]
+    let s : Finset ℤ := Ioo (-n ) (n)
+    let f :  ℤ → Fin n × Fin n  := fun (i : ℤ) ↦ ((↑(i⁺) , ↑(i⁻)) : Fin n × Fin n)
+    have : s = (Set.Ioo (-n) n : Set ℤ ) := by aesop
+    have f_inj: InjOn f s := by simp [injOn_aux n,this]
+
+    -- (f : α → β)
+    have hf :  ∀ a ∈ s, f a ∈ t := by
+      intro a ains
+      simp [s] at ains
+      simp [M, t]
+      --obtain ⟨ha,hb⟩ := ains
+      obtain hha | hha' := le_total a 0
+      left
+      have : a⁺ = 0 := by rwa [posPart_eq_zero]
+      simp [this]
+     -- rw [← Fin.val_zero' n, Fin.val_inj]--, Fin.natCast_eq_zero]
+      right
+      have : a⁻ = 0 := by rwa [negPart_eq_zero]
+      simp [this]
+
+    have: s.card ≤ t.card := by apply Finset.card_le_card_of_injOn f hf f_inj
+    have: s.card = 2*n -1 := by
+      simp [s]
+      rw [← Nat.cast_add, Int.toNat_ofNat]
+      omega
+    aesop
+
+  use M
+  constructor
+  exact MavI2
+  simp [t] at Mhastwon
+  convert Mhastwon
+  simp
+
+  by_contra hz
+  push_neg at hz
+  have: n = 0 := by omega
+  rw [this] at hnz
+  simp at hnz
+
+theorem exIdentity2UB (n : ℕ) : ex (Identity 2) n ≤ 2*n-1 := by
   classical
   rw [ex]
   rw [exRect]
@@ -205,11 +284,9 @@ theorem exIdentity2 (n : ℕ) : ex (Identity 2) n ≤ 2*n-1 := by
     exact hmaa
    ⟩
 
-lemma injOn_aux (n : ℕ) [NeZero n] :
-    InjOn (fun z : ℤ ↦ ((↑(z⁺), ↑(z⁻)) : Fin n × Fin n)) (Ioo (-n) n) :=
-  ((CharP.intCast_injOn_Ico _ n).prodMap (CharP.intCast_injOn_Ico _ n)).comp
-    posPart_negPart_injective.injOn fun z hz ↦
-    ⟨⟨posPart_nonneg _, by simpa [NeZero.pos] using hz.2⟩,
-      ⟨negPart_nonneg _, by simpa [NeZero.pos] using hz.1⟩⟩
+theorem  exIdentity2EQ  (n : ℕ )[hnz: NeZero n]: 2*n-1 = ex (Identity 2) n  := by
+  have : 2*n-1 ≤ ex (Identity 2) n := exIdentity2LB n
+  have : 2*n-1 ≥ ex (Identity 2) n := exIdentity2UB n
+  omega
 
 example (n k : ℕ) : ex (Identity k) n ≤ (2*n-1)*k := by sorry
