@@ -74,7 +74,7 @@ def exB [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
 --have Mhastwon : 2*n  ≤ density n M +1 := ?proof_of_Mhastwon-
 
 --(ha : ⊥ < a)
-@[simp] theorem ex.le_sup_iff (P : α → β → Prop) (P_nonempty : ∃ a b, P a b ) {a n : ℕ}
+@[simp] theorem le_ex_iff (P : α → β → Prop) (P_nonempty : ∃ a b, P a b ) {a n : ℕ}
 : a ≤ ex P n ↔ ∃ (M : Fin n → Fin n → Prop) , ¬contains P M ∧ a ≤ density M := by
   cases a
   case zero =>  --zero is easy just take the zero matrix
@@ -159,7 +159,7 @@ lemma  exIdentity2LB  (n : ℕ )[NeZero n]: 2*n-1 ≤ ex (Identity 2) n  := by
   have : ¬contains (Identity 2) M := ?proof_of_M_avoids_I2
   have : 2*n -1 ≤ density M := ?proof_of_Mhastwon--(filter (fun x ↦ M x.1 x.2 : Fin n × Fin n → Prop) univ).card +1 := ?proof_of_Mhastwon
   -- Main proof starts here --
-  rw [ex.le_sup_iff]
+  rw [le_ex_iff]
   use M
   -- prove that (P is non-empty)
   case P_nonempty => simp [Identity]
