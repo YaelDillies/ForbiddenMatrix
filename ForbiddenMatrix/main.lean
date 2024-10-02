@@ -17,13 +17,13 @@ end Finset
 
 open Finset Set
 
-section Contains
+section contains
 variable {α β γ δ : Type*} [Preorder α] [Preorder β] [Preorder γ] [Preorder δ]
 
-def Contains (P : α → β → Prop) (M : γ → δ → Prop) : Prop :=
+def contains (P : α → β → Prop) (M : γ → δ → Prop) : Prop :=
   ∃ f : α → γ, StrictMono f ∧ ∃ g : β → δ, StrictMono g ∧ ∀ a b, P a b → M (f a) (g b)
 
-def ContainsB (P : α → β → Bool) (M : γ → δ → Bool) : Prop :=
+def containsB (P : α → β → Bool) (M : γ → δ → Bool) : Prop :=
   ∃ f : α → γ, StrictMono f ∧ ∃ g : β → δ, StrictMono g ∧ ∀ a b, P a b → M (f a) (g b)
 
 instance [Fintype α] [DecidableRel (· < · : α → α → Prop)] [DecidableRel (· < · : γ → γ → Prop)] {f : α → γ} :
@@ -33,7 +33,7 @@ instance {P : α → β → Bool} {M : γ → δ → Bool}
     [DecidableRel (· < · : α → α → Prop)] [DecidableRel (· < · : β → β → Prop)]
     [DecidableRel (· < · : γ → γ → Prop)] [DecidableRel (· < · : δ → δ → Prop)]
     [Fintype α] [Fintype β] [Fintype γ] [Fintype δ] [DecidableEq α] [DecidableEq β] :
-    Decidable (ContainsB P M) :=
+    Decidable (containsB P M) :=
   inferInstanceAs (Decidable (∃ f : α → γ, StrictMono f ∧ ∃ g : β → δ, StrictMono g ∧ ∀ a b, P a b → M (f a) (g b)))
 
 /- lemma reflectContain (M : γ → δ → Prop) : Contains M M :=
@@ -41,23 +41,71 @@ instance {P : α → β → Bool} {M : γ → δ → Bool}
 example (a b : ℕ) : a + a *b = (b+1) * a := by
   rw [Nat.right_distrib]
 -/
-end Contains
+end contains
 
-variable {α β : Type*} [Preorder α] [Preorder β]
+
+
+variable {α β γ δ : Type*} [Preorder α] [Preorder β] [Preorder γ] [Preorder δ]
+open scoped Classical in noncomputable def densityRect {n m :ℕ} (M : Fin n → Fin m → Prop)  : ℕ := card {(i, j) : Fin n × Fin m | M i j}
+--open scoped Classical in noncomputable def density (M : α → β → Prop) : ℕ := card {(i, j) : α × β | M i j}
+open scoped Classical in noncomputable def density {n:ℕ} (M : Fin n → Fin n → Prop)  : ℕ := card {(i, j) : Fin n × Fin n | M i j}
 open scoped Classical in noncomputable def exRect (P : α → β → Prop) (n : ℕ) (m : ℕ) : ℕ :=
-  sup {M : Fin n → Fin m → Prop | ¬ Contains P M} fun M ↦ card {(i, j) : Fin n × Fin m | M i j}
+  sup {M : Fin n → Fin m → Prop | ¬ contains P M} fun M ↦ densityRect M--card {(i, j) : Fin n × Fin m | M i j}
 
 def exRectB [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
     [DecidableRel (· < · : α → α → Prop)] [DecidableRel (· < · : β → β → Prop)]
     (P : α → β → Bool) (n : ℕ) (m : ℕ) : ℕ :=
-  sup {M : Fin n → Fin m → Bool | ¬ ContainsB P M} fun M ↦ card {ij : Fin n × Fin m | M ij.1 ij.2}
+  sup {M : Fin n → Fin m → Bool | ¬ containsB P M} fun M ↦ card {ij : Fin n × Fin m | M ij.1 ij.2}
 
-open scoped Classical in noncomputable def ex (P : α → β → Prop) (n : ℕ) : ℕ := exRect P n n
+open scoped Classical in noncomputable def ex (P : α → β → Prop) (n : ℕ) : ℕ :=
+   sup {M : Fin n → Fin n → Prop | ¬ contains P M} fun M ↦ density M
 
 def exB [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
     [DecidableRel (· < · : α → α → Prop)] [DecidableRel (· < · : β → β → Prop)]
     (P : α → β → Bool) (n : ℕ) : ℕ :=
   exRectB P n n
+
+--@[simp]
+--theorem ex.le_sup_iff {α : Type u_2} {ι : Type u_5} [linear_order α] [order_bot α] {s : finset ι} {f : ι → α} {a : α} (ha : ⊥ < a) :
+--a ≤ s.sup f ↔ ∃ (b : ι) (H : b ∈ s), a ≤ f b :=
+
+--let  M (i j : Fin n) :  Prop := i = (0 : Fin n) ∨ j = (0 : Fin n)
+--have MavI2 : ¬contains (Identity 2) M := ?proof_of_MavI2
+--have Mhastwon : 2*n  ≤ density n M +1 := ?proof_of_Mhastwon-
+
+--(ha : ⊥ < a)
+@[simp] theorem ex.le_sup_iff (P : α → β → Prop) (P_nonempty : ∃ a b, P a b ) {a n : ℕ}
+: a ≤ ex P n ↔ ∃ (M : Fin n → Fin n → Prop) , ¬contains P M ∧ a ≤ density M := by
+  cases a
+  case zero =>  --zero is easy just take the zero matrix
+    have : 0 ≤ ex P n := by simp only [zero_le]
+    have : ∃ (M : Fin n → Fin n → Prop) , ¬contains P M ∧ 0 ≤ density M := by
+      let M (_ _ : Fin n) :  Prop := false
+      use M
+      simp
+      by_contra McontainP
+      rw [contains] at McontainP
+      obtain ⟨f,_,g,_,m⟩ := McontainP
+      obtain ⟨a,b,Pab⟩ := P_nonempty
+      have := m a b Pab
+      have := M (f a) (g b)
+      contradiction
+    aesop
+    done
+  case succ =>
+    apply Iff.intro
+    · -- (→)
+      intro h1
+      simp [ex] at h1
+      exact h1
+      done
+    · -- (←)
+      intro ⟨M,avoids_P,has_a⟩
+      rw [ex, Finset.le_sup_iff]
+      use M
+      aesop; aesop
+      done
+    done
 
 -- def trivialPattern : (α → β → Prop) := [1, 1, 1]
 -- λ x : nat ↦ x + 5
@@ -70,7 +118,6 @@ def IdentityB (n : ℕ) (i j : Fin n) : Bool := i = j
 def PatternOneB : Fin 1 → Fin 1 → Bool := fun _ : Fin 1 => fun _ : Fin 1 => true
 
 -- example : PatternOne = (Identity 1) := by
-
 -- #eval exB PatternOneB 4
 -- #eval exB (IdentityB 2) 4
 
@@ -81,13 +128,15 @@ lemma PatternOneIsIdentity : PatternOne = (Identity 1) := by
 
 lemma exPatternOne (n : ℕ) : ex PatternOne n = 0 := by
   rw [ex]
-  rw [exRect]
   simp [filter_eq_empty_iff]
   intro M
   contrapose
   simp
-  intro i j Mij
-  simp [Contains]
+  intro Mnonzero
+  simp only [density, card_eq_zero, filter_eq_empty_iff, Finset.mem_univ, true_implies, Prod.forall, not_forall,
+  not_not] at Mnonzero
+  obtain ⟨i,j,Mij⟩ := Mnonzero
+  simp [contains]
   refine ⟨fun _ ↦ i, by simp [StrictMono], ![j], by simp [StrictMono], by simp [Mij]⟩
 
 example (n : ℕ) : ex (Identity 1) n = 0 := by
@@ -101,25 +150,24 @@ lemma injOn_aux (n : ℕ) [NeZero n] :
     ⟨⟨posPart_nonneg _, by simpa [NeZero.pos] using hz.2⟩,
       ⟨negPart_nonneg _, by simpa [NeZero.pos] using hz.1⟩⟩
 
+--set_option diagnostics true
 lemma  exIdentity2LB  (n : ℕ )[NeZero n]: 2*n-1 ≤ ex (Identity 2) n  := by
   --The following code is a bad style: (a lot of unnecessary casting to deal with, e.g. double-casting)
   --let  M (i j : Fin n) :  Prop := i.val = 0  ∨ j.val = 0
   --Better to use this one:
   let  M (i j : Fin n) :  Prop := i = (0 : Fin n) ∨ j = (0 : Fin n)
-  have MavI2 : ¬Contains (Identity 2) M := ?proof_of_MavI2
-  have Mhastwon : 2*n  ≤ (filter (fun x ↦ M x.1 x.2 : Fin n × Fin n → Prop) univ).card +1 := ?proof_of_Mhastwon
+  have : ¬contains (Identity 2) M := ?proof_of_M_avoids_I2
+  have : 2*n -1 ≤ density M := ?proof_of_Mhastwon--(filter (fun x ↦ M x.1 x.2 : Fin n × Fin n → Prop) univ).card +1 := ?proof_of_Mhastwon
   -- Main proof starts here --
-  rw [ex,exRect]
-  rw [Finset.le_sup_iff]
-  simp
+  rw [ex.le_sup_iff]
   use M
-  constructor
-  exact MavI2
-  convert Mhastwon
+  -- prove that (P is non-empty)
+  case P_nonempty => simp [Identity]
+
   -- It remains to prove MavI2 and Mhastwon
-  case proof_of_MavI2 =>
+  case proof_of_M_avoids_I2 =>
     by_contra h
-    simp [Contains] at h
+    simp [contains] at h
     obtain ⟨ f,hf,g, hg, pmap ⟩ := h
     simp [M, Identity] at pmap
     simp [StrictMono] at hf hg
@@ -141,7 +189,7 @@ lemma  exIdentity2LB  (n : ℕ )[NeZero n]: 2*n-1 ≤ ex (Identity 2) n  := by
   -- Now, we prove Mhastwon
   case proof_of_Mhastwon =>
     let t := (filter (fun x ↦ M x.1 x.2 : Fin n × Fin n → Prop) univ)
-    simp [t, M]
+    simp only [density, ge_iff_le, M]
     let s : Finset ℤ := Ioo (-n ) (n)
     let f :  ℤ → Fin n × Fin n  := fun (i) ↦ (↑(i⁺) , ↑(i⁻))
     have : s = (Set.Ioo (-n) n : Set ℤ ) := by aesop
@@ -158,34 +206,24 @@ lemma  exIdentity2LB  (n : ℕ )[NeZero n]: 2*n-1 ≤ ex (Identity 2) n  := by
       right
       have : a⁻ = 0 := by rwa [negPart_eq_zero]
       simp [this]
-
-    have: s.card ≤ t.card := Finset.card_le_card_of_injOn f hf f_inj
+    have: s.card ≤ t.card:= Finset.card_le_card_of_injOn f hf f_inj
     have: s.card = 2*n -1 := by
       simp [s]
       norm_cast
       rw [Int.toNat_ofNat]
       omega
-    aesop
-
-  -- Finally, proving non-negativity of n --
-  rename_i hnz
-  simp
-  by_contra hz
-  push_neg at hz
-  have: n = 0 := by omega
-  rw [this] at hnz
-  simp at hnz
+    have: 2*n -1 ≤ t.card := by aesop
+    convert this
 
 
 
 theorem exIdentity2UB (n : ℕ) : ex (Identity 2) n ≤ 2*n-1 := by
   classical
   rw [ex]
-  rw [exRect]
   simp
   intro M
   contrapose
-  simp
+  simp [density]
   intro M_has_two_n_points
 
   let f : Fin n × Fin n → ℤ := fun ⟨i, j⟩ ↦ i - j
@@ -228,7 +266,7 @@ theorem exIdentity2UB (n : ℕ) : ex (Identity 2) n ≤ 2*n-1 := by
     simp only [f] at hb'
     rw [sub_eq_sub_iff_add_eq_add] at hb'
     omega
-  simp [Contains]
+  simp [contains]
 
   cases dominance with
   | inl halb =>
@@ -288,12 +326,13 @@ theorem exIdentity2UB (n : ℕ) : ex (Identity 2) n ≤ 2*n-1 := by
       fin_cases a';simp
       exact hmbb
       exact hmaa
-   ⟩
+    ⟩
   done
 
 theorem  exIdentity2EQ  (n : ℕ )[hnz: NeZero n]: 2*n-1 = ex (Identity 2) n  := by
   have : 2*n-1 ≤ ex (Identity 2) n := exIdentity2LB n
   have : 2*n-1 ≥ ex (Identity 2) n := exIdentity2UB n
   omega
+  done
 
---example (n k : ℕ) : ex (Identity k) n ≤ (2*n-1)*k := by sorry
+example (n k : ℕ) : ex (Identity k) n ≤ (2*n-1)*k := by sorry
