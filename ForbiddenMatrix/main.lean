@@ -6,6 +6,9 @@ import Mathlib.Data.Nat.Lattice
 import Mathlib.Data.ZMod.Defs
 import Mathlib.Logic.Equiv.Fin
 import Mathlib.Tactic.FinCases
+import Mathlib.Data.Matrix.Notation
+
+
 set_option linter.unusedTactic false
 
 namespace Finset
@@ -17,9 +20,29 @@ end Finset
 
 open Finset Set
 
+-- def trivialPattern : (α → β → Prop) := [1, 1, 1]
+-- λ x : nat ↦ x + 5
+-- variable {n : ℕ }
+-- ![![a, b, c], ![b, c, d]] : matrix (fin 2) (fin 3) α
+-- see https://leanprover-community.github.io/theories/linear_algebra.html
+-- λ (i : m) (j : n), (_ : α)
+def HatPattern : Fin 2 → Fin 3 → Prop := ![![false, true, false], ![true, false, true]]
+def VerticalTwoPattern : Fin 2 → Fin 1 → Prop := ![![true], ![true]]
+def Identity (n : ℕ) (i j : Fin n) : Prop := i = j
+def TwoOneY (i _ : Fin 2) : Prop := i = 0
+def PatternOne : Fin 1 → Fin 1 → Prop := fun _ : Fin 1 => fun _ : Fin 1 => true
+def IdentityB (n : ℕ) (i j : Fin n) : Bool := i = j
+def PatternOneB : Fin 1 → Fin 1 → Bool := fun _ : Fin 1 => fun _ : Fin 1 => true
+--open Matrix
+--section matrices
+
+--def M : matrix (Fin 3) (Fin 3) Prop
+
+
 section contains
 variable {α β γ δ : Type*} [Preorder α] [Preorder β] [Preorder γ] [Preorder δ]
 
+-- TODO: replace StrictMono f by StrictMonoOn {a ∣ ∃ b, P a b} f, and similarly for g to ignore blank rows/columns
 def contains (P : α → β → Prop) (M : γ → δ → Prop) : Prop :=
   ∃ f : α → γ, StrictMono f ∧ ∃ g : β → δ, StrictMono g ∧ ∀ a b, P a b → M (f a) (g b)
 
@@ -36,12 +59,19 @@ instance {P : α → β → Bool} {M : γ → δ → Bool}
     Decidable (containsB P M) :=
   inferInstanceAs (Decidable (∃ f : α → γ, StrictMono f ∧ ∃ g : β → δ, StrictMono g ∧ ∀ a b, P a b → M (f a) (g b)))
 
-/- lemma reflectContain (M : γ → δ → Prop) : Contains M M :=
-  ⟨_, _⟩
-example (a b : ℕ) : a + a *b = (b+1) * a := by
-  rw [Nat.right_distrib]
--/
+lemma reflectContain (M : γ → δ → Prop) : contains M M := by
+  simp [contains]
+  let f : γ → γ := fun x ↦ x
+  let g : δ → δ := fun x ↦ x
+  have hf: StrictMono f := by simp [StrictMono]
+  have hg: StrictMono g := by simp [StrictMono]
+  refine ⟨f,hf,g,hg, ?_ ⟩
+  aesop
+
+
+
 end contains
+
 
 
 
@@ -68,7 +98,6 @@ def exB [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
 --@[simp]
 --theorem ex.le_sup_iff {α : Type u_2} {ι : Type u_5} [linear_order α] [order_bot α] {s : finset ι} {f : ι → α} {a : α} (ha : ⊥ < a) :
 --a ≤ s.sup f ↔ ∃ (b : ι) (H : b ∈ s), a ≤ f b :=
-
 --let  M (i j : Fin n) :  Prop := i = (0 : Fin n) ∨ j = (0 : Fin n)
 --have MavI2 : ¬contains (Identity 2) M := ?proof_of_MavI2
 --have Mhastwon : 2*n  ≤ density n M +1 := ?proof_of_Mhastwon-
@@ -107,19 +136,6 @@ def exB [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
       done
     done
 
--- def trivialPattern : (α → β → Prop) := [1, 1, 1]
--- λ x : nat ↦ x + 5
--- variable {n : ℕ }
-def Identity (n : ℕ) (i j : Fin n) : Prop := i = j
-def TwoOneY (i _ : Fin 2) : Prop := i = 0
-def PatternOne : Fin 1 → Fin 1 → Prop := fun _ : Fin 1 => fun _ : Fin 1 => true
-
-def IdentityB (n : ℕ) (i j : Fin n) : Bool := i = j
-def PatternOneB : Fin 1 → Fin 1 → Bool := fun _ : Fin 1 => fun _ : Fin 1 => true
-
--- example : PatternOne = (Identity 1) := by
--- #eval exB PatternOneB 4
--- #eval exB (IdentityB 2) 4
 
 lemma PatternOneIsIdentity : PatternOne = (Identity 1) := by
   ext -- apply function extensionality for all a F(a) = G(a) => F = G
@@ -239,7 +255,7 @@ theorem exIdentity2UB (n : ℕ) : ex (Identity 2) n ≤ 2*n-1 := by
     omega
   let k := 1
 
-  have hf ⦃a⦄ (ha : a ∈ s) : f a ∈ t := by simp [f, t]; omega
+  have hf ⦃a⦄ (_ : a ∈ s) : f a ∈ t := by simp [f, t]; omega
 
   have hn : t.card * k < s.card := by
     simp [k, s, t]
@@ -335,4 +351,113 @@ theorem  exIdentity2EQ  (n : ℕ )[hnz: NeZero n]: 2*n-1 = ex (Identity 2) n  :=
   omega
   done
 
-example (n k : ℕ) : ex (Identity k) n ≤ (2*n-1)*k := by sorry
+theorem exVerticalTwoPattern (n : ℕ)  [NeZero n]  : ex VerticalTwoPattern n = n := by
+  have UB: ex VerticalTwoPattern n ≤ n := ?Proof_UB
+  have LB: n ≤ ex VerticalTwoPattern n := ?Proof_LB
+  exact Nat.le_antisymm UB LB
+
+  case Proof_LB =>
+    let  M (i j : Fin n) : Prop := i = (0 : Fin n)
+    have : ¬contains VerticalTwoPattern M := ?proof_of_M_avoids_VerticalTwoPattern
+    have : n ≤ density M := ?proof_of_Mhasn
+  -- Main proof starts here --
+    rw [le_ex_iff]
+    use M
+    case P_nonempty => simp [VerticalTwoPattern]
+
+    case proof_of_Mhasn =>
+      rw [density]
+      simp [M]
+      let f :  ℕ → Fin n × Fin n  := fun (j) ↦ ( 0 , j)
+      have f_inj : ∀ i < n, ∀ j < n, f i = f j → i = j := by
+        intro i hi j hj fieqfj
+        simp [f] at fieqfj
+        have natCast_injOn_Fin := CharP.natCast_injOn_Iio (Fin n) n -- coercion N -> Fin n is only injective on [0, n[
+        apply natCast_injOn_Fin at fieqfj; simpa;simpa;simpa
+      refine le_card_of_inj_on_range f ?_ f_inj
+      intro i _
+      simp [f]
+
+    case proof_of_M_avoids_VerticalTwoPattern =>
+      by_contra cont
+      rw [contains, VerticalTwoPattern] at cont
+      obtain ⟨f,hf,g,hg,prop⟩ := cont
+      simp [StrictMono] at hf hg
+      simp at prop
+      specialize prop 1
+      have fmono: f 0 < f 1 := by simp [hf]
+      rw [prop] at fmono
+      contradiction
+
+  case Proof_UB =>
+    classical
+    rw [ex]
+    simp
+    intro M
+    contrapose
+    simp [density]
+    intro more_than_n
+
+    let f : Fin n × Fin n → ℕ := fun ⟨i, j⟩ ↦ j
+    let s := (filter (fun (i, j) ↦ M i j) univ)
+    have : s.card > n := by aesop
+    let t : Finset ℕ := Finset.Iio n
+    let k := 1
+    have hf ⦃a⦄ (_ : a ∈ s) : f a ∈ t := by simp [f, t]
+    have hn : t.card * k < s.card := by aesop
+    obtain ⟨y, hy, hy'⟩ := exists_lt_card_fiber_of_mul_lt_card_of_maps_to hf hn
+    simp only [k] at hy'
+    rw [one_lt_card] at hy'
+    simp only [mem_filter, ne_eq] at hy'
+    obtain ⟨a, ha, b, hb, hab⟩ := hy'
+    obtain ⟨ha, ha'⟩ := ha
+    obtain ⟨hb, hb'⟩ := hb
+    rw [contains]
+    have: a.2 = b.2 := by
+      simp [f] at ha' hb'
+      rw [← ha'] at hb'
+      omega
+    have dominance : (a.1 < b.1) ∨ (b.1 < a.1) := by
+      have: a.1 ≠ b.1 := ?_
+      aesop
+      by_contra a1b1
+      apply hab
+      aesop
+
+    let g := ![a.2]
+    have gmono : StrictMono g := by simp [StrictMono]
+
+    cases dominance with
+    | inl ab =>
+      let f := ![a.1, b.1]
+      have fmono : StrictMono f := by
+        simp [f, StrictMono]
+        intro i j hij
+        have abeqfm : i = 0 ∧ j = 1 := by omega
+        obtain ⟨hi', hj'⟩ := abeqfm
+        simp [hi', hj', ab]
+
+      refine⟨f,fmono,g,gmono, ?_⟩
+      simp [VerticalTwoPattern]
+      intro a b
+      fin_cases a;aesop;aesop
+    | inr ba =>
+      let f := ![b.1, a.1]
+      have fmono : StrictMono f := by
+        simp [f, StrictMono]
+        intro i j hij
+        have abeqfm : i = 0 ∧ j = 1 := by omega
+        obtain ⟨hi', hj'⟩ := abeqfm
+        simp [hi', hj', ba]
+      refine⟨f,fmono,g,gmono, ?_⟩
+      simp [VerticalTwoPattern]
+      intro a b
+      fin_cases a;aesop;aesop
+
+--lemma rotationInvariant (P : α → β → Prop) := ex P n = ex rotate(P) n := by sorry
+
+theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n := by sorry
+
+theorem exIdentitykUB  (n k : ℕ) [NeZero n]  : ex (Identity k) n ≤ (2*n-1)*k := by sorry
+
+--λ (i : m) (j : n), (_ : α)
