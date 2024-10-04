@@ -1,22 +1,13 @@
 import Mathlib.Algebra.CharP.Defs
 import Mathlib.Algebra.Order.Group.PosPart
+import Mathlib.Algebra.Order.Monoid.Canonical.Basic
 import Mathlib.Combinatorics.Pigeonhole
 import Mathlib.Data.Int.Interval
-import Mathlib.Data.Nat.Lattice
-import Mathlib.Data.ZMod.Defs
-import Mathlib.Logic.Equiv.Fin
-import Mathlib.Tactic.FinCases
 import Mathlib.Data.Matrix.Notation
-
+import Mathlib.Data.ZMod.Defs
+import Mathlib.Tactic.FinCases
 
 set_option linter.unusedTactic false
-
-namespace Finset
-variable {ι α : Type*} [CanonicallyLinearOrderedAddCommMonoid α] {s : Finset ι} {f : ι → α}
-
-@[simp] lemma sup_eq_zero : s.sup f = 0 ↔ ∀ i ∈ s, f i = 0 := by simp [← bot_eq_zero']
-
-end Finset
 
 open Finset Set
 
