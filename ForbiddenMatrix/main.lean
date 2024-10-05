@@ -1,13 +1,24 @@
 import Mathlib.Algebra.CharP.Defs
 import Mathlib.Algebra.Order.Group.PosPart
-import Mathlib.Algebra.Order.Monoid.Canonical.Basic
 import Mathlib.Combinatorics.Pigeonhole
 import Mathlib.Data.Int.Interval
-import Mathlib.Data.Matrix.Notation
+import Mathlib.Data.Nat.Lattice
 import Mathlib.Data.ZMod.Defs
+import Mathlib.Logic.Equiv.Fin
 import Mathlib.Tactic.FinCases
+import Mathlib.Data.Matrix.Notation
+import Mathlib.Data.Finset.Max
+
+
 
 set_option linter.unusedTactic false
+
+namespace Finset
+variable {ι α : Type*} [CanonicallyLinearOrderedAddCommMonoid α] {s : Finset ι} {f : ι → α}
+
+@[simp] lemma sup_eq_zero : s.sup f = 0 ↔ ∀ i ∈ s, f i = 0 := by simp [← bot_eq_zero']
+
+end Finset
 
 open Finset Set
 
@@ -51,15 +62,8 @@ instance {P : α → β → Bool} {M : γ → δ → Bool}
   inferInstanceAs (Decidable (∃ f : α → γ, StrictMono f ∧ ∃ g : β → δ, StrictMono g ∧ ∀ a b, P a b → M (f a) (g b)))
 
 lemma reflectContain (M : γ → δ → Prop) : contains M M := by
-  simp [contains]
-  let f : γ → γ := fun x ↦ x
-  let g : δ → δ := fun x ↦ x
-  have hf: StrictMono f := by simp [StrictMono]
-  have hg: StrictMono g := by simp [StrictMono]
-  refine ⟨f,hf,g,hg, ?_ ⟩
+  refine ⟨id, by simp [StrictMono],id, by simp [StrictMono], ?_ ⟩
   aesop
-
-
 
 end contains
 
@@ -70,6 +74,7 @@ variable {α β γ δ : Type*} [Preorder α] [Preorder β] [Preorder γ] [Preord
 open scoped Classical in noncomputable def densityRect {n m :ℕ} (M : Fin n → Fin m → Prop)  : ℕ := card {(i, j) : Fin n × Fin m | M i j}
 --open scoped Classical in noncomputable def density (M : α → β → Prop) : ℕ := card {(i, j) : α × β | M i j}
 open scoped Classical in noncomputable def density {n:ℕ} (M : Fin n → Fin n → Prop)  : ℕ := card {(i, j) : Fin n × Fin n | M i j}
+
 open scoped Classical in noncomputable def exRect (P : α → β → Prop) (n : ℕ) (m : ℕ) : ℕ :=
   sup {M : Fin n → Fin m → Prop | ¬ contains P M} fun M ↦ densityRect M--card {(i, j) : Fin n × Fin m | M i j}
 
@@ -78,13 +83,20 @@ def exRectB [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
     (P : α → β → Bool) (n : ℕ) (m : ℕ) : ℕ :=
   sup {M : Fin n → Fin m → Bool | ¬ containsB P M} fun M ↦ card {ij : Fin n × Fin m | M ij.1 ij.2}
 
-open scoped Classical in noncomputable def ex (P : α → β → Prop) (n : ℕ) : ℕ :=
+open scoped Classical in noncomputable
+def ex (P : α → β → Prop) (n : ℕ) : ℕ :=
    sup {M : Fin n → Fin n → Prop | ¬ contains P M} fun M ↦ density M
 
 def exB [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
     [DecidableRel (· < · : α → α → Prop)] [DecidableRel (· < · : β → β → Prop)]
     (P : α → β → Bool) (n : ℕ) : ℕ :=
   exRectB P n n
+
+@[simp] lemma avoid_le_ex {n : ℕ} (P : α → β → Prop) (M : Fin n → Fin n → Prop) (AvoidP : ¬ contains P M)
+: density M ≤ ex P n :=  by
+  rw [ex]
+  apply le_sup
+  simpa only [mem_filter, Finset.mem_univ, true_and]
 
 --@[simp]
 --theorem ex.le_sup_iff {α : Type u_2} {ι : Type u_5} [linear_order α] [order_bot α] {s : finset ι} {f : ι → α} {a : α} (ha : ⊥ < a) :
@@ -359,14 +371,20 @@ theorem exVerticalTwoPattern (n : ℕ)  [NeZero n]  : ex VerticalTwoPattern n = 
     case proof_of_Mhasn =>
       rw [density]
       simp [M]
+      let s : Finset (Fin n × Fin n) := (filter (fun x : Fin n × Fin n ↦ x.1 = 0) univ)
       let f :  ℕ → Fin n × Fin n  := fun (j) ↦ ( 0 , j)
+
       have f_inj : ∀ i < n, ∀ j < n, f i = f j → i = j := by
         intro i hi j hj fieqfj
         simp [f] at fieqfj
         have natCast_injOn_Fin := CharP.natCast_injOn_Iio (Fin n) n -- coercion N -> Fin n is only injective on [0, n[
         apply natCast_injOn_Fin at fieqfj; simpa;simpa;simpa
+        -- Daniel Weber said that the problem is that (5 : Fin 3) = (8 : Fin 3), so you need h1 and h2 to remove the cast.
+        -- https://leanprover.zulipchat.com/#narrow/stream/113489-new-members/topic/Casting.20Fin.20n.20to.20Nat/near/474463179
+        --apply_fun Fin.val at fieqfj
+        --rwa [Fin.val_cast_of_lt hi, Fin.val_cast_of_lt hj] at fieqfj
       refine le_card_of_inj_on_range f ?_ f_inj
-      intro i _
+      intro i hi
       simp [f]
 
     case proof_of_M_avoids_VerticalTwoPattern =>
@@ -408,6 +426,7 @@ theorem exVerticalTwoPattern (n : ℕ)  [NeZero n]  : ex VerticalTwoPattern n = 
       simp [f] at ha' hb'
       rw [← ha'] at hb'
       omega
+
     have dominance : (a.1 < b.1) ∨ (b.1 < a.1) := by
       have: a.1 ≠ b.1 := ?_
       aesop
@@ -446,8 +465,84 @@ theorem exVerticalTwoPattern (n : ℕ)  [NeZero n]  : ex VerticalTwoPattern n = 
       fin_cases a;aesop;aesop
 
 --lemma rotationInvariant (P : α → β → Prop) := ex P n = ex rotate(P) n := by sorry
+--#eval sup {j | false} id
+theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
+  classical
+  simp [ex]
+  intro M noHat
+  -- let f : Fin n × Fin n → ℕ := fun ⟨i, j⟩ ↦ j
+  -- sup {M : Fin n → Fin n → Prop | ¬ contains P M} fun M ↦ density M
+  -- let rightMostOfRow := fun i ↦ ({j: Fin n| M i j } : Finset (Fin n)).max
+  -- let leftMostOfRow  := fun i ↦ ({j: Fin n| M i j } : Finset (Fin n)).min
 
-theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n := by sorry
+  let M1 (i j : Fin n) : Prop := M i j ∧ ((∀ j', M i j' → j ≤ j') ∨ (∀ j', M i j' → j' ≤ j))
+  let M2 (i j : Fin n) : Prop := M i j ∧ (¬ M1 i j)
+  have : ∀ i j, M1 i j → M i j := by aesop
+  have M2SubsetM1: ∀ i j, M2 i j → M i j := by aesop
+
+  have split_dm: density M = density M1 + density M2 := ?_
+    --simp [M1,M2]
+    --Learn injection,surjection,bijection of functions
+
+  have dm1: density M1 ≤ 2*n := ?_n
+  have dm2: density M2 ≤ n :=
+    have M2AvP : ¬ contains VerticalTwoPattern M2  := by
+      by_contra containsV2
+      simp [contains] at containsV2
+      obtain ⟨f,hf,g,hg,prop⟩ := containsV2
+      -- M2  g(0)
+      -- f(0) x
+      -- f(1) y
+      let x := (f 0, g 0)
+      let y := (f 1, g 0)
+      let i := f 1
+      let j := g 0
+      simp [VerticalTwoPattern] at prop
+      have M2y : M2 i j := by apply prop
+      simp [M2, M1] at M2y
+      have H:  (∃ a, M i a ∧ a < j) ∧ (∃ b, M i b ∧ j < b)  := by exact M2y.2 M2y.1
+      obtain ⟨a,ha1,ha2⟩ := H.left
+      obtain ⟨b,hb1,hb2⟩ := H.right
+      have alb : a < b := by omega
+      let g' := ![ a, j, b]
+      have monog' : StrictMono g' := by
+        simp [StrictMono, g']
+        intro x y ha
+        fin_cases x
+        fin_cases y; contradiction; simp [ha2]; simp [alb]
+        fin_cases y; contradiction; contradiction; simp [hb2]
+        fin_cases y; contradiction; contradiction; contradiction
+
+      -- M1   a g(0) b
+      -- f(0)    x
+      -- f(1)    y
+
+      have M1contHatPattern :  contains HatPattern M  := by
+       rw [contains]
+       refine ⟨f,hf,g',monog', ?_⟩
+       intro a b H
+       simp [HatPattern] at H
+       sorry
+
+
+      -- HatPattern -- contain ja
+
+    calc
+    density M2 ≤ ex VerticalTwoPattern n := avoid_le_ex VerticalTwoPattern M2 M2AvP
+    _ = n  := exVerticalTwoPattern n
+
+  calc
+    density M = density M1 + density M2 := split_dm
+    _         ≤ 2*n + density M2      := by simp only [dm1, add_le_add_iff_right]
+    _         ≤ 2*n + n               := by simp only [dm2, add_le_add_iff_left]
+    _         ≤ 3*n                   := by omega
+
+
+
+  --
+
+  -- Fix M that avoids HatPattern
+  --
 
 theorem exIdentitykUB  (n k : ℕ) [NeZero n]  : ex (Identity k) n ≤ (2*n-1)*k := by sorry
 
