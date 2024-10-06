@@ -72,9 +72,11 @@ end contains
 
 
 variable {α β γ δ : Type*} [Preorder α] [Preorder β] [Preorder γ] [Preorder δ]
-open scoped Classical in noncomputable def densityRect {n m :ℕ} (M : Fin n → Fin m → Prop)  : ℕ :=  ({(i, j) : Fin n × Fin m | M i j} : Finset (Fin n × Fin m)).card
+open scoped Classical in noncomputable
+def densityRect {n m :ℕ} (M : Fin n → Fin m → Prop)  : ℕ :=  ({(i, j) : Fin n × Fin m | M i j} : Finset (Fin n × Fin m)).card
 --open scoped Classical in noncomputable def density (M : α → β → Prop) : ℕ := card {(i, j) : α × β | M i j}
-open scoped Classical in noncomputable def density {n:ℕ} (M : Fin n → Fin n → Prop)  : ℕ :=  ({(i, j) : Fin n × Fin n | M i j} : Finset (Fin n × Fin n)).card
+open scoped Classical in noncomputable
+def density {n:ℕ} (M : Fin n → Fin n → Prop)  : ℕ := ({(i, j) : Fin n × Fin n | M i j} : Finset (Fin n × Fin n)).card
 
 open scoped Classical in noncomputable def exRect (P : α → β → Prop) (n : ℕ) (m : ℕ) : ℕ :=
   sup {M : Fin n → Fin m → Prop | ¬ contains P M} fun M ↦ densityRect M--card {(i, j) : Fin n × Fin m | M i j}
@@ -480,8 +482,10 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
   let Pred_min_or_max_Ofrow := fun i j ↦ (∀ j', M i j' → j ≤ j') ∨ (∀ j', M i j' → j' ≤ j)
   let M1 (i j : Fin n) : Prop := M i j ∧ (Pred_min_or_max_Ofrow i j)
   let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (Pred_min_or_max_Ofrow i j)
+  have M1SubsetM: ∀ i j, M1 i j → M i j := by aesop
   have M2SubsetM: ∀ i j, M2 i j → M i j := by aesop
   have split_dm: density M = density M1 + density M2 := by
+    --simp [density]
     let s1 : Finset (Fin n × Fin n):= {(i,j) | M1 i j}
     let s2 : Finset (Fin n × Fin n):= {(i,j) | M2 i j}
     let s : Finset (Fin n × Fin n) := {(i,j) | M i j}
@@ -498,15 +502,13 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
         simp [s1,s2,M1,M2] at xins1s2
         simp [s]
         tauto
-    have dm: density M = s.card := by simp [density]
+    have dm : density M = s.card := by simp [density]
     have dm1: density M1 = s1.card := by
-      simp [density,s1,M1]
-      convert
-      --sorry
-    have dm2: density M2 = s2.card := sorry --
-     --simp [density,M2,s2,M1]
-     -- convert
-      --sorry
+      simp [density]
+      convert rfl
+    have dm2: density M2 = s2.card := by --
+      simp [density,M2,s2,M1]
+      convert rfl
     have s1eqs2card: (s1 ∪ s2).card = s1.card + s2.card := by
       apply card_union_of_disjoint
       simp [Disjoint]
@@ -524,13 +526,33 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
       have:= pins1.right
       have:= pins2.right
       contradiction
+    rw [← seqs1s2] at s1eqs2card
+    rwa [dm,dm1,dm2]
 
-    --rw [← seqs1s2] at s1eqs2card
-    --aesop
+  have M1_avoids_H3 : ¬ contains Horizontal3Pattern M1  := by
+    by_contra containsH3
+    simp [contains] at containsH3
+    obtain ⟨f,hf,g,hg,prop⟩ := containsH3
+    -- M1   g(0) g(1) g(2)
+    -- f(0)  1    1    1
+    have m1left: M1 (f 0) (g 0) := by apply prop; simp [Horizontal3Pattern]
+    have mleft: M (f 0) (g 0) := by apply M1SubsetM; assumption
+    have mid : M1 (f 0) (g 1) := by apply prop; simp [Horizontal3Pattern]
+    have m1right: M1 (f 0) (g 2) := by apply prop; simp [Horizontal3Pattern]
+    have mright: M (f 0) (g 2) := by apply M1SubsetM; assumption
+    simp [M1,Pred_min_or_max_Ofrow] at mid
+    simp [StrictMono] at hg
+    cases mid.right with
+    | inl g1min =>
+      have: g 1 ≤ g 0 := by apply g1min; exact mleft
+      have: g 0 < g 1 := by simp [hg]
+      omega
+    | inr g1max =>
+      have: g 2 ≤ g 1 := by apply g1max; exact mright
+      have: g 1 < g 2 := by simp [hg]
+      omega
 
-    --simp [M1,M2]
-    --Learn injection,surjection,bijection of functions
-  have M1_avoids_H3 : ¬ contains Horizontal3Pattern M1  := ?_
+
   have M2_avoids_V2 : ¬ contains VerticalTwoPattern M2  := by
     by_contra containsV2
     simp [contains] at containsV2
@@ -586,9 +608,6 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
   have dm1: density M1 ≤ 2*n := by calc
     density M1 ≤ ex Horizontal3Pattern n := avoid_le_ex M1 M1_avoids_H3
     _ = 2*n  := exHorizontal3Pattern n
-   -- simp [density, M1]
-   -- simp [card_filter_le_iff]
-   -- intro S hS
 
   have dm2: density M2 ≤ n := calc
     density M2 ≤ ex VerticalTwoPattern n := avoid_le_ex M2 M2_avoids_V2
@@ -600,11 +619,6 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
     _         ≤ 2*n + n               := by simp only [dm2, add_le_add_iff_left]
     _         ≤ 3*n                   := by omega
 
-
-
-  --
-  -- Fix M that avoids HatPattern
-  --
 
 theorem exIdentitykUB  (n k : ℕ) [NeZero n]  : ex (Identity k) n ≤ (2*n-1)*k := by sorry
 
