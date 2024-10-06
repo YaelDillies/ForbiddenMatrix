@@ -30,6 +30,7 @@ open Finset Set
 -- λ (i : m) (j : n), (_ : α)
 def HatPattern : Fin 2 → Fin 3 → Prop := ![![false, true, false], ![true, false, true]]
 def VerticalTwoPattern : Fin 2 → Fin 1 → Prop := ![![true], ![true]]
+def Horizontal3Pattern : Fin 1 → Fin 3 → Prop := ![![true,true,true]]
 def Identity (n : ℕ) (i j : Fin n) : Prop := i = j
 def TwoOneY (i _ : Fin 2) : Prop := i = 0
 def PatternOne : Fin 1 → Fin 1 → Prop := fun _ : Fin 1 => fun _ : Fin 1 => true
@@ -71,9 +72,9 @@ end contains
 
 
 variable {α β γ δ : Type*} [Preorder α] [Preorder β] [Preorder γ] [Preorder δ]
-open scoped Classical in noncomputable def densityRect {n m :ℕ} (M : Fin n → Fin m → Prop)  : ℕ := card {(i, j) : Fin n × Fin m | M i j}
+open scoped Classical in noncomputable def densityRect {n m :ℕ} (M : Fin n → Fin m → Prop)  : ℕ :=  ({(i, j) : Fin n × Fin m | M i j} : Finset (Fin n × Fin m)).card
 --open scoped Classical in noncomputable def density (M : α → β → Prop) : ℕ := card {(i, j) : α × β | M i j}
-open scoped Classical in noncomputable def density {n:ℕ} (M : Fin n → Fin n → Prop)  : ℕ := card {(i, j) : Fin n × Fin n | M i j}
+open scoped Classical in noncomputable def density {n:ℕ} (M : Fin n → Fin n → Prop)  : ℕ :=  ({(i, j) : Fin n × Fin n | M i j} : Finset (Fin n × Fin n)).card
 
 open scoped Classical in noncomputable def exRect (P : α → β → Prop) (n : ℕ) (m : ℕ) : ℕ :=
   sup {M : Fin n → Fin m → Prop | ¬ contains P M} fun M ↦ densityRect M--card {(i, j) : Fin n × Fin m | M i j}
@@ -92,7 +93,7 @@ def exB [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
     (P : α → β → Bool) (n : ℕ) : ℕ :=
   exRectB P n n
 
-@[simp] lemma avoid_le_ex {n : ℕ} (P : α → β → Prop) (M : Fin n → Fin n → Prop) (AvoidP : ¬ contains P M)
+@[simp] lemma avoid_le_ex {n : ℕ} {P : α → β → Prop} (M : Fin n → Fin n → Prop) (AvoidP : ¬ contains P M)
 : density M ≤ ex P n :=  by
   rw [ex]
   apply le_sup
@@ -466,6 +467,8 @@ theorem exVerticalTwoPattern (n : ℕ)  [NeZero n]  : ex VerticalTwoPattern n = 
 
 --lemma rotationInvariant (P : α → β → Prop) := ex P n = ex rotate(P) n := by sorry
 --#eval sup {j | false} id
+theorem exHorizontal3Pattern (n :ℕ) [NeZero n] : ex Horizontal3Pattern n = 2*n := by sorry
+
 theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
   classical
   simp [ex]
@@ -474,61 +477,121 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
   -- sup {M : Fin n → Fin n → Prop | ¬ contains P M} fun M ↦ density M
   -- let rightMostOfRow := fun i ↦ ({j: Fin n| M i j } : Finset (Fin n)).max
   -- let leftMostOfRow  := fun i ↦ ({j: Fin n| M i j } : Finset (Fin n)).min
+  let Pred_min_or_max_Ofrow := fun i j ↦ (∀ j', M i j' → j ≤ j') ∨ (∀ j', M i j' → j' ≤ j)
+  let M1 (i j : Fin n) : Prop := M i j ∧ (Pred_min_or_max_Ofrow i j)
+  let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (Pred_min_or_max_Ofrow i j)
+  have M2SubsetM: ∀ i j, M2 i j → M i j := by aesop
+  have split_dm: density M = density M1 + density M2 := by
+    let s1 : Finset (Fin n × Fin n):= {(i,j) | M1 i j}
+    let s2 : Finset (Fin n × Fin n):= {(i,j) | M2 i j}
+    let s : Finset (Fin n × Fin n) := {(i,j) | M i j}
+    have seqs1s2: s = s1 ∪ s2 := by
+      ext x
+      constructor
+      · -- (->)
+        intro xins
+        simp [s] at xins
+        simp [s1,s2,M1,M2]
+        tauto
+      · -- (<-)
+        intro xins1s2
+        simp [s1,s2,M1,M2] at xins1s2
+        simp [s]
+        tauto
+    have dm: density M = s.card := by simp [density]
+    have dm1: density M1 = s1.card := by
+      simp [density,s1,M1]
+      convert
+      --sorry
+    have dm2: density M2 = s2.card := sorry --
+     --simp [density,M2,s2,M1]
+     -- convert
+      --sorry
+    have s1eqs2card: (s1 ∪ s2).card = s1.card + s2.card := by
+      apply card_union_of_disjoint
+      simp [Disjoint]
+      intro x h1 h2
+      intro p hp
+      simp
+      have pins1 : p ∈ s1 := by
+        apply h1
+        exact hp
+      have pins2: p ∈ s2 := by
+        apply h2
+        exact hp
+      simp [M1,s1] at pins1
+      simp [M2,s2] at pins2
+      have:= pins1.right
+      have:= pins2.right
+      contradiction
 
-  let M1 (i j : Fin n) : Prop := M i j ∧ ((∀ j', M i j' → j ≤ j') ∨ (∀ j', M i j' → j' ≤ j))
-  let M2 (i j : Fin n) : Prop := M i j ∧ (¬ M1 i j)
-  have : ∀ i j, M1 i j → M i j := by aesop
-  have M2SubsetM1: ∀ i j, M2 i j → M i j := by aesop
+    --rw [← seqs1s2] at s1eqs2card
+    --aesop
 
-  have split_dm: density M = density M1 + density M2 := ?_
     --simp [M1,M2]
     --Learn injection,surjection,bijection of functions
+  have M1_avoids_H3 : ¬ contains Horizontal3Pattern M1  := ?_
+  have M2_avoids_V2 : ¬ contains VerticalTwoPattern M2  := by
+    by_contra containsV2
+    simp [contains] at containsV2
+    obtain ⟨f,hf,g,hg,prop⟩ := containsV2
+    -- M2  g(0)
+    -- f(0) 1
+    -- f(1) 1
+    let i := f 1
+    let j := g 0
+    simp [VerticalTwoPattern] at prop
+    have M2y : M2 i j := by apply prop
+    simp [M2, M1,Pred_min_or_max_Ofrow] at M2y
+    have H:  (∃ a, M i a ∧ a < j) ∧ (∃ b, M i b ∧ j < b)  := by exact M2y.2
+    obtain ⟨a,ha1,ha2⟩ := H.left
+    obtain ⟨b,hb1,hb2⟩ := H.right
+    have alb : a < b := by omega
+    let g' : Fin 3 → Fin n:= ![ a, g 0, b]
+    have monog' : StrictMono g' := by
+      simp [StrictMono, g']
+      intro x y ha
+      fin_cases x
+      fin_cases y; contradiction; simp [ha2]   ; simp [alb]
+      fin_cases y; contradiction; contradiction; simp [hb2]
+      fin_cases y; contradiction; contradiction; contradiction
 
-  have dm1: density M1 ≤ 2*n := ?_n
-  have dm2: density M2 ≤ n :=
-    have M2AvP : ¬ contains VerticalTwoPattern M2  := by
-      by_contra containsV2
-      simp [contains] at containsV2
-      obtain ⟨f,hf,g,hg,prop⟩ := containsV2
-      -- M2  g(0)
-      -- f(0) x
-      -- f(1) y
-      let x := (f 0, g 0)
-      let y := (f 1, g 0)
-      let i := f 1
-      let j := g 0
-      simp [VerticalTwoPattern] at prop
-      have M2y : M2 i j := by apply prop
-      simp [M2, M1] at M2y
-      have H:  (∃ a, M i a ∧ a < j) ∧ (∃ b, M i b ∧ j < b)  := by exact M2y.2 M2y.1
-      obtain ⟨a,ha1,ha2⟩ := H.left
-      obtain ⟨b,hb1,hb2⟩ := H.right
-      have alb : a < b := by omega
-      let g' := ![ a, j, b]
-      have monog' : StrictMono g' := by
-        simp [StrictMono, g']
-        intro x y ha
-        fin_cases x
-        fin_cases y; contradiction; simp [ha2]; simp [alb]
-        fin_cases y; contradiction; contradiction; simp [hb2]
-        fin_cases y; contradiction; contradiction; contradiction
+      --   M   a j/g(0) b
+      --  f(0)     1
+      -- i/f(1) 1  1  1
 
-      -- M1   a g(0) b
-      -- f(0)    x
-      -- f(1)    y
+    have : contains HatPattern M  := by
+      rw [contains]
+      refine ⟨f,hf,g',monog', ?_⟩
+      -- We prove forall a,b, HatPattern a b => M (f a) (g' b)
+      intro i_row j_col H
+      fin_cases i_row
+      fin_cases j_col -- top part of hat pattern
+      · contradiction
+      ·
+        simp [g']
+        apply M2SubsetM (f 0) (g 0)
+        apply prop 0 0
+      · contradiction
+      fin_cases j_col -- bottom part of hat pattern
+      · simp [ha1,g']
+      ·
+        simp [g']
+        apply M2SubsetM (f 1) (g 0)
+        apply prop 1 0
+      · simp [g', hb1]
+    contradiction
+    done
 
-      have M1contHatPattern :  contains HatPattern M  := by
-       rw [contains]
-       refine ⟨f,hf,g',monog', ?_⟩
-       intro a b H
-       simp [HatPattern] at H
-       sorry
+  have dm1: density M1 ≤ 2*n := by calc
+    density M1 ≤ ex Horizontal3Pattern n := avoid_le_ex M1 M1_avoids_H3
+    _ = 2*n  := exHorizontal3Pattern n
+   -- simp [density, M1]
+   -- simp [card_filter_le_iff]
+   -- intro S hS
 
-
-      -- HatPattern -- contain ja
-
-    calc
-    density M2 ≤ ex VerticalTwoPattern n := avoid_le_ex VerticalTwoPattern M2 M2AvP
+  have dm2: density M2 ≤ n := calc
+    density M2 ≤ ex VerticalTwoPattern n := avoid_le_ex M2 M2_avoids_V2
     _ = n  := exVerticalTwoPattern n
 
   calc
@@ -540,7 +603,6 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
 
 
   --
-
   -- Fix M that avoids HatPattern
   --
 
