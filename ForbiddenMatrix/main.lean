@@ -9,12 +9,11 @@ import Mathlib.Tactic.FinCases
 import Mathlib.Data.Matrix.Notation
 import Mathlib.Data.Finset.Max
 import Mathlib.Algebra.BigOperators.Group.Finset
-
-
-
+import Mathlib.Data.Set.Pairwise.Basic
+import Mathlib.Data.Finset.Sort
 
 set_option linter.unusedTactic false
-set_option maxHeartbeats 300000
+set_option maxHeartbeats 400000
 
 namespace Finset
 variable {ι α : Type*} [CanonicallyLinearOrderedAddCommMonoid α] {s : Finset ι} {f : ι → α}
@@ -45,7 +44,6 @@ def PatternOneB : Fin 1 → Fin 1 → Bool := fun _ : Fin 1 => fun _ : Fin 1 => 
 
 --def M : matrix (Fin 3) (Fin 3) Prop
 
-
 section contains
 variable {α β γ δ : Type*} [Preorder α] [Preorder β] [Preorder γ] [Preorder δ]
 
@@ -73,14 +71,15 @@ lemma reflectContain (M : γ → δ → Prop) : contains M M := by
 end contains
 
 
-
-
 variable {α β γ δ : Type*} [Preorder α] [Preorder β] [Preorder γ] [Preorder δ]
 open scoped Classical in noncomputable
 def densityRect {n m :ℕ} (M : Fin n → Fin m → Prop)  : ℕ :=  ({(i, j) : Fin n × Fin m | M i j} : Finset (Fin n × Fin m)).card
 --open scoped Classical in noncomputable def density (M : α → β → Prop) : ℕ := card {(i, j) : α × β | M i j}
 open scoped Classical in noncomputable
 def density {n:ℕ} (M : Fin n → Fin n → Prop)  : ℕ := ({(i, j) : Fin n × Fin n | M i j} : Finset (Fin n × Fin n)).card
+
+open scoped Classical in noncomputable
+def row_density {n:ℕ } (M : Fin n → Fin n → Prop) (i : Fin n): ℕ := ({j | M i j} : Finset (Fin n)).card
 
 open scoped Classical in noncomputable def exRect (P : α → β → Prop) (n : ℕ) (m : ℕ) : ℕ :=
   sup {M : Fin n → Fin m → Prop | ¬ contains P M} fun M ↦ densityRect M--card {(i, j) : Fin n × Fin m | M i j}
@@ -523,6 +522,73 @@ density M = density M1 + density M2 := by
   rw [← seqs1s2] at s1eqs2card
   aesop
 
+--open scoped Classical in noncomputable
+lemma split_density_to_rows {n:ℕ} [NeZero n] (M : Fin n → Fin n → Prop) : density M = ∑ i,  row_density M i := by
+  classical
+  let s : Finset (Fin n × Fin n) := { (x,y)| M x y}
+  let f : Fin n × Fin n → Fin n  := fun x ↦ x.1
+  let t : Finset (Fin n) := Finset.univ
+  have H : ∀ x ∈ s, f x ∈ t := by
+    intro x _
+    simp [f,t]
+  have h_sum_card:= Finset.card_eq_sum_card_fiberwise H
+  simp [f,t] at h_sum_card
+  have: s.card = density M := by simp [s,density]
+  rw [this] at h_sum_card
+  have: ∀ k, (filter (fun x ↦ f x = k) s).card = row_density M k := ?proof_fiber_row_density
+  simp only [this] at h_sum_card
+  exact h_sum_card
+
+  case proof_fiber_row_density =>
+    intro k
+    simp [row_density]
+    let s := filter (fun x_1 ↦ x_1.1 = k) {(x,y)| M x y}
+    let t := filter (fun j ↦ M k j) Finset.univ
+    let i : (a :Fin n × Fin n) → a ∈ s → Fin n := fun a h ↦ a.2
+    let hi : ∀ (a : Fin n × Fin n) (ha : a ∈ s), i a ha ∈ t := by
+      intro a ha
+      simp [i]
+      simp [s] at ha
+      refine mem_filter.mpr ?_
+      constructor
+      simp
+      rw [ha.2] at ha
+      exact ha.1
+    let i_inj : ∀ (a₁ : Fin n × Fin n) (ha₁ : a₁ ∈ s) (a₂ : Fin n × Fin n) (ha₂ : a₂ ∈ s), i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂ := by
+      intro a1 ha1 a2 ha2 H
+      simp [i] at H
+      simp [s] at ha1 ha2
+      have : a1.1 = a2.1 := by omega
+      exact Prod.ext this H
+    let i_surj : ∀ b ∈ t, ∃ a, ∃ (ha : a ∈ s), i a ha = b :=  by
+      intro b hb
+      let a := (k,b)
+      let ha : a ∈ s := by
+        refine mem_filter.mpr ?_
+        simp [t] at hb
+        simp [mem_filter]
+        exact hb
+      use a
+      use ha
+    have:= Finset.card_bij i hi i_inj i_surj
+    convert this
+    done
+
+
+--  classical
+  --pairwise disjoint union is too hard
+
+lemma UB_density_by_rows {n c:ℕ} [NeZero n] (M : Fin n → Fin n → Prop)
+(h_row_density_bounded: ∀i, row_density M i ≤ c) : density M ≤  n * c  :=  calc
+    density M = ∑ i,  row_density M i := split_density_to_rows M
+    _         ≤ ∑ _, c := by
+              apply Finset.sum_le_sum
+              simp [mem_filter]
+              exact h_row_density_bounded
+    _         = n*c := by simp only [sum_const, card_univ, Fintype.card_fin, smul_eq_mul]
+
+--Finset.card_disjiUnion
+
 -- open BigOperators
 -- TODO: Abstract the proof into generic lemmas
 theorem exHorizontal2PatternUB (n :ℕ) [NeZero n]  : ex Horizontal2Pattern n ≤ n := by
@@ -582,13 +648,10 @@ theorem exHorizontal2PatternUB (n :ℕ) [NeZero n]  : ex Horizontal2Pattern n �
     done
 
   case proof_dm1 =>
-    let one_in_row_i (i : Fin n): Finset (Fin n) := {j | M1 i j}
-    have allrow_one: ∀ i, (one_in_row_i i).card ≤ 1 := by
+    have h_row_one: ∀ i, row_density M1 i ≤ 1 := by
       intro i
       by_contra H
-      simp at H
-      simp [one_lt_card_iff] at H
-      simp [one_in_row_i] at H
+      simp [row_density, one_lt_card_iff] at H
       obtain ⟨a,ha,b,hb,aneqb⟩ := H
       simp [M1,Pred_min_Ofrow] at ha
       simp [M1,Pred_min_Ofrow] at hb
@@ -601,88 +664,13 @@ theorem exHorizontal2PatternUB (n :ℕ) [NeZero n]  : ex Horizontal2Pattern n �
           apply hb.2
           exact ha.1
       contradiction
-    let one_in_M1 : Finset (Fin n × Fin n) := {(i,j)| M1 i j}
 
-    have: one_in_M1.card ≤ n := by
-      --(s : Finset ι) (g : ι → κ) (f : ι → α) fun j ↦ M1 i j
-      let s : Finset (Fin n × Fin n) := one_in_M1
-      let f : Fin n × Fin n → Fin n  := fun x ↦ x.1
-      let t : Finset (Fin n) := {x | ↑x < n}
-      --CAREFUL: x < ↑n would have been n mod n = 0 (you need to cast carefully)
-      have H : ∀ x ∈ s, f x ∈ t := by
-        intro x hx
-        simp [f,t]
-      have h_sum_card:= Finset.card_eq_sum_card_fiberwise H--Finset.sum_fiberwise s g f
-      simp only [s, t, f] at h_sum_card
-      have h_k: ∀ k, (filter (fun x_1 ↦ ↑x_1.1 = k) one_in_M1).card = (one_in_row_i k).card := by
-        intro k
-        simp [one_in_row_i]
-        let s := filter (fun x_1 ↦ x_1.1 = k) one_in_M1
-        let t := filter (fun j ↦ M1 k j) Finset.univ
-        let i : (a :Fin n × Fin n) → a ∈ s → Fin n := fun a h ↦ a.2
-        let hi : ∀ (a : Fin n × Fin n) (ha : a ∈ s), i a ha ∈ t := by
-          intro a ha
-          simp [i]
-          simp [s,one_in_M1] at ha
-          refine mem_filter.mpr ?_
-          constructor
-          simp
-          rw [ha.2] at ha
-          exact ha.1
-        let i_inj : ∀ (a₁ : Fin n × Fin n) (ha₁ : a₁ ∈ s) (a₂ : Fin n × Fin n) (ha₂ : a₂ ∈ s), i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂ := by
-          intro a1 ha1 a2 ha2 H
-          simp [i] at H
-          simp [s,one_in_M1] at ha1 ha2
-          have : a1.1 = a2.1 := by omega
-          exact Prod.ext this H
-        let i_surj : ∀ b ∈ t, ∃ a, ∃ (ha : a ∈ s), i a ha = b :=  by
-          intro b hb
-          let a := (k,b)
-          let ha : a ∈ s := by
-            refine mem_filter.mpr ?_
-            simp [one_in_M1]
-            simp [t] at hb
-            exact hb
-          use a
-          use ha
-        have:= Finset.card_bij i hi i_inj i_surj
-        convert this
-        done
-      --simp [s] at h_sum_card
+    have:= UB_density_by_rows M1 h_row_one; simp at this
+    exact this
 
-      calc
-        one_in_M1.card = ∑ x ∈ filter (fun x : Fin n ↦ ↑x < n) Finset.univ,
-                        (filter (fun x_1 ↦ x_1.1 = x) one_in_M1).card := h_sum_card
-        _ = ∑ x ∈ filter (fun x : Fin n ↦ ↑x < n) Finset.univ, (one_in_row_i x).card  := by
-          simp [one_in_row_i, one_in_M1]
-          simp_all only [mem_filter]
-          done
-        _ ≤ ∑ x ∈ filter (fun x : Fin n ↦ ↑x < n) Finset.univ, 1 := by
-          apply Finset.sum_le_sum
-          simp [one_in_M1,mem_filter]
-          exact allrow_one
-        _ = (filter (fun x : Fin n ↦ ↑x < n) Finset.univ).card := by simp
-        _ = n := by simp
-      done
-
-    simp [one_in_M1] at this
-    simp [density]
-    convert this
-    done
-       -- apply sum_disjiUnion -- todo sum over pairwise disjoint sets = sum on each set
-        -- better: Finset.card_disjiUnion
-        --apply card_disjiUnion
-        -- better: Finset.sum_fiberwise_of_maps_to
-        -- better: Finset.sum_fiberwise or
-        -- Finset.card_eq_sum_card_fiberwise
-
-
-
-
-theorem exHorizontal3PatternUB (n :ℕ) [NeZero n] : ex Horizontal3Pattern n ≤ 2*n := by
-  classical
-  sorry
-
+--theorem exHorizontal3PatternUB (n :ℕ) [NeZero n] : ex Horizontal3Pattern n ≤ 2*n := by
+--  classical
+--  sorry
 
 theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
   classical
@@ -698,28 +686,7 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
   have M1SubsetM: ∀ i j, M1 i j → M i j := by aesop
   have M2SubsetM: ∀ i j, M2 i j → M i j := by aesop
   have split_dm: density M = density M1 + density M2 := split_density M Pred_min_or_max_Ofrow
-  have M1_avoids_H3 : ¬ contains Horizontal3Pattern M1  := by
-    by_contra containsH3
-    simp [contains] at containsH3
-    obtain ⟨f,hf,g,hg,prop⟩ := containsH3
-    -- M1   g(0) g(1) g(2)
-    -- f(0)  1    1    1
-    have m1left: M1 (f 0) (g 0) := by apply prop; simp [Horizontal3Pattern]
-    have mleft: M (f 0) (g 0) := by apply M1SubsetM; exact m1left
-    have mid : M1 (f 0) (g 1) := by apply prop; simp [Horizontal3Pattern]
-    have m1right: M1 (f 0) (g 2) := by apply prop; simp [Horizontal3Pattern]
-    have mright: M (f 0) (g 2) := by apply M1SubsetM; exact m1right
-    simp [M1,Pred_min_or_max_Ofrow] at mid
-    simp [StrictMono] at hg
-    cases mid.right with
-    | inl g1min =>
-      have: g 1 ≤ g 0 := by apply g1min; exact mleft
-      have: g 0 < g 1 := by simp [hg]
-      omega
-    | inr g1max =>
-      have: g 2 ≤ g 1 := by apply g1max; exact mright
-      have: g 1 < g 2 := by simp [hg]
-      omega
+
 
 
   have M2_avoids_V2 : ¬ contains VerticalTwoPattern M2  := by
@@ -776,9 +743,69 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
     contradiction
     done
 
-  have dm1: density M1 ≤ 2*n := by calc
-    density M1 ≤ ex Horizontal3Pattern n := avoid_le_ex M1 M1_avoids_H3
-    _ ≤ 2*n  := exHorizontal3PatternUB n
+  have dm1: density M1 ≤ 2*n := by
+    have h_row_one: ∀ i, row_density M1 i ≤ 2 := by
+      intro i
+      by_contra H
+      simp [row_density] at H
+      have: ∃ u : Fin n, M1 i u ∧ ¬ (Pred_min_or_max_Ofrow i u) := ?proof_mid_point_exist
+      simp [M1] at this
+      obtain ⟨u, ⟨uinM,h1⟩ ,h2⟩ := this
+      contradiction
+
+      case proof_mid_point_exist =>
+        simp [Finset.two_lt_card] at H
+        obtain ⟨a,ha,b,hb,c,hc,anb,anc,bnc⟩ := H
+        let s : Finset (Fin n):= {a,b,c}
+        have h: s.card = 3 := by
+          simp [s]
+          rw [card_eq_three]
+          use a,b,c
+        let f := s.orderEmbOfFin h
+
+        let x := f 0; have hx: x ∈ s := by simp [x,f]
+        let y := f 1; have hy: y ∈ s := by simp [y,f]
+        let z := f 2; have hz: z ∈ s := by simp [z,f]
+        have: x < y ∧  y < z := by simp [x,y,z] --[OrderEmbedding.lt_iff_lt]
+        obtain ⟨xy,yz⟩ := this
+        have M1ix : M1 i x := by
+          simp [s] at hx
+          rcases hx with h1 | h2 | h3
+          · rwa [h1]
+          · rwa [h2]
+          · rwa [h3]
+        have M1iy : M1 i y :=  by
+          simp [s] at hy
+          rcases hy with h1 | h2 | h3
+          · rwa [h1]
+          · rwa [h2]
+          · rwa [h3]
+        have M1iz : M1 i z :=  by
+          simp [s] at hz
+          rcases hz with h1 | h2 | h3
+          · rwa [h1]
+          · rwa [h2]
+          · rwa [h3]
+        have Mix : M i x := by
+          apply M1SubsetM
+          exact M1ix
+        have Miz : M i z := by
+          apply M1SubsetM
+          exact M1iz
+        use y
+        constructor
+        · -- Proof: M1 i y
+          exact M1iy
+        · -- Proof: y not min nor max
+          simp [Pred_min_or_max_Ofrow]
+          constructor
+          · -- Proof: y is not min
+            use x
+          · -- Proof: y is not max
+            use z
+
+    have:= UB_density_by_rows M1 h_row_one
+    omega
 
   have dm2: density M2 ≤ n := calc
     density M2 ≤ ex VerticalTwoPattern n := avoid_le_ex M2 M2_avoids_V2
@@ -790,6 +817,29 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
     _         ≤ 2*n + n               := by simp only [dm2, add_le_add_iff_left]
     _         ≤ 3*n                   := by omega
 
-theorem exIdentitykUB  (n k : ℕ) [NeZero n]  : ex (Identity k) n ≤ (2*n-1)*k := by sorry
+  done
+    /-- have M1_avoids_H3 : ¬ contains Horizontal3Pattern M1  := by
+    by_contra containsH3
+    simp [contains] at containsH3
+    obtain ⟨f,hf,g,hg,prop⟩ := containsH3
+    -- M1   g(0) g(1) g(2)
+    -- f(0)  1    1    1
+    have m1left: M1 (f 0) (g 0) := by apply prop; simp [Horizontal3Pattern]
+    have mleft: M (f 0) (g 0) := by apply M1SubsetM; exact m1left
+    have mid : M1 (f 0) (g 1) := by apply prop; simp [Horizontal3Pattern]
+    have m1right: M1 (f 0) (g 2) := by apply prop; simp [Horizontal3Pattern]
+    have mright: M (f 0) (g 2) := by apply M1SubsetM; exact m1right
+    simp [M1,Pred_min_or_max_Ofrow] at mid
+    simp [StrictMono] at hg
+    cases mid.right with
+    | inl g1min =>
+      have: g 1 ≤ g 0 := by apply g1min; exact mleft
+      have: g 0 < g 1 := by simp [hg]
+      omega
+    | inr g1max =>
+      have: g 2 ≤ g 1 := by apply g1max; exact mright
+      have: g 1 < g 2 := by simp [hg]
+      omega
+  --/
 
---λ (i : m) (j : n), (_ : α)
+theorem exIdentitykUB  (n k : ℕ) [NeZero n]  : ex (Identity k) n ≤ (2*n-1)*k := by sorry
