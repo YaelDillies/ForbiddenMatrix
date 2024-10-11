@@ -12,6 +12,8 @@ import Mathlib.Algebra.BigOperators.Group.Finset
 import Mathlib.Data.Set.Pairwise.Basic
 import Mathlib.Data.Finset.Sort
 
+
+
 set_option linter.unusedTactic false
 set_option maxHeartbeats 400000
 
@@ -34,6 +36,8 @@ def HatPattern : Fin 2 → Fin 3 → Prop := ![![false, true, false], ![true, fa
 def VerticalTwoPattern : Fin 2 → Fin 1 → Prop := ![![true], ![true]]
 def Horizontal2Pattern : Fin 1 → Fin 2 → Prop := ![![true,true]]
 def Horizontal3Pattern : Fin 1 → Fin 3 → Prop := ![![true,true,true]]
+
+def HorizontalkPattern (k : ℕ) (_ :Fin 1) (_ : Fin k) : Prop := true
 def Identity (n : ℕ) (i j : Fin n) : Prop := i = j
 def TwoOneY (i _ : Fin 2) : Prop := i = 0
 def PatternOne : Fin 1 → Fin 1 → Prop := fun _ : Fin 1 => fun _ : Fin 1 => true
@@ -587,20 +591,16 @@ lemma UB_density_by_rows {n c:ℕ} [NeZero n] (M : Fin n → Fin n → Prop)
               exact h_row_density_bounded
     _         = n*c := by simp only [sum_const, card_univ, Fintype.card_fin, smul_eq_mul]
 
---Finset.card_disjiUnion
-
+-- Finset.card_disjiUnion
 -- open BigOperators
--- TODO: Abstract the proof into generic lemmas
-theorem exHorizontal2PatternUB (n :ℕ) [NeZero n]  : ex Horizontal2Pattern n ≤ n := by
+example (n :ℕ) [NeZero n]  : ex Horizontal2Pattern n ≤ n := by
   classical
   simp [ex]
   intro M noH2P
   let Pred_min_Ofrow := fun i j ↦ ∀ j', M i j' → j ≤ j'
   let M1 (i j : Fin n) : Prop := M i j ∧   (Pred_min_Ofrow i j)
   let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (Pred_min_Ofrow i j)
-  --have M1SubsetM: ∀ i j, M1 i j → M i j := by aesop
-  --have M2SubsetM: ∀ i j, M2 i j → M i j := by aesop
-  have split_dm : density M = density M1 + density M2 := split_density M Pred_min_Ofrow
+
   have dm1: density M1 ≤ n:= ?proof_dm1
   have M2_avoids_trivial : ¬ contains PatternOne M2 := ?proof_M2_av_trivial
   have dm2: density M2 ≤ 0 := calc
@@ -608,7 +608,7 @@ theorem exHorizontal2PatternUB (n :ℕ) [NeZero n]  : ex Horizontal2Pattern n �
     _ = 0  := exPatternOne n
 
   calc
-    density M = density M1 + density M2 := split_dm
+    density M = density M1 + density M2 :=  split_density M Pred_min_Ofrow
     _         ≤ n + density M2      := by simp only [dm1, add_le_add_iff_right]
     _         ≤ n + 0               := by simp only [dm2, add_le_add_iff_left]
     _         ≤ n                   := by omega
@@ -668,28 +668,90 @@ theorem exHorizontal2PatternUB (n :ℕ) [NeZero n]  : ex Horizontal2Pattern n �
     have:= UB_density_by_rows M1 h_row_one; simp at this
     exact this
 
+theorem exHorizontalkPatternUB (k n: ℕ) [NeZero n] : ex (HorizontalkPattern k) n ≤ n*(k-1) := by
+  classical
+  simp only [ex, Finset.sup_le_iff, mem_filter, Finset.mem_univ, true_and]
+  intro M NoHPk
+  have h_row_k: ∀ i, row_density M i ≤ k-1  := ?proof_h_row_k
+  exact UB_density_by_rows M h_row_k
+
+  case proof_h_row_k =>
+    intro i
+    by_contra H
+    simp at H
+    simp [row_density] at H
+    let s : Finset (Fin n) := {j | M i j}
+    have h: k ≤ s.card := by simp [s]; omega
+    let g := s.orderEmbOfCardLe h
+    have HPk : contains (HorizontalkPattern k) M := ?proof_HPk
+    contradiction
+    case proof_HPk =>
+      simp [contains]
+      refine ⟨![i], by simp [StrictMono],g, by simp [StrictMono, OrderEmbedding.lt_iff_lt], ?EmbedPatttern⟩
+      · -- Proof of Embed Pattern
+        simp [HorizontalkPattern]
+        intro j
+        have: g j ∈ s := s.orderEmbOfCardLe_mem h j
+        simp [s] at this
+        exact this
+
 --theorem exHorizontal3PatternUB (n :ℕ) [NeZero n] : ex Horizontal3Pattern n ≤ 2*n := by
 --  classical
 --  sorry
-
+-- Can try to get optimal bound here.
 theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
   classical
   simp [ex]
   intro M noHat
-  -- let f : Fin n × Fin n → ℕ := fun ⟨i, j⟩ ↦ j
-  -- sup {M : Fin n → Fin n → Prop | ¬ contains P M} fun M ↦ density M
-  -- let rightMostOfRow := fun i ↦ ({j: Fin n| M i j } : Finset (Fin n)).max
-  -- let leftMostOfRow  := fun i ↦ ({j: Fin n| M i j } : Finset (Fin n)).min
-  let Pred_min_or_max_Ofrow := fun i j ↦ (∀ j', M i j' → j ≤ j') ∨ (∀ j', M i j' → j' ≤ j)
-  let M1 (i j : Fin n) : Prop := M i j ∧ (Pred_min_or_max_Ofrow i j)
-  let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (Pred_min_or_max_Ofrow i j)
-  have M1SubsetM: ∀ i j, M1 i j → M i j := by aesop
-  have M2SubsetM: ∀ i j, M2 i j → M i j := by aesop
-  have split_dm: density M = density M1 + density M2 := split_density M Pred_min_or_max_Ofrow
 
+  let min_or_max_of_row := fun i j ↦ (∀ j', M i j' → j ≤ j') ∨ (∀ j', M i j' → j' ≤ j)
+  let M1 (i j : Fin n) : Prop := M i j ∧   (min_or_max_of_row i j)
+  let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (min_or_max_of_row i j)
 
+  have M1_avoids_H3 : ¬ contains (HorizontalkPattern 3) M1  := ?proof_M1_avoids_H3
+  have M2_avoids_V2 : ¬ contains VerticalTwoPattern M2      := ?proof_M2_avoids_V2
 
-  have M2_avoids_V2 : ¬ contains VerticalTwoPattern M2  := by
+  have dm1: density M1 ≤ n*2 := calc
+     density M1 ≤ ex  (HorizontalkPattern 3) n := avoid_le_ex M1 M1_avoids_H3
+     _          ≤ n*2                          := exHorizontalkPatternUB 3 n
+
+  have dm2: density M2 ≤ n := calc
+    density M2 ≤ ex VerticalTwoPattern n := avoid_le_ex M2 M2_avoids_V2
+    _          = n                       := exVerticalTwoPattern n
+
+  calc
+    density M = density M1 + density M2 := split_density M min_or_max_of_row
+    _         ≤ n*2 + density M2      := by simp [dm1]
+    _         ≤ n*2 + n               := by simp [dm2]
+    _         ≤ 3*n                   := by omega
+
+  --
+  case proof_M1_avoids_H3 =>
+    by_contra containsH3
+    simp [contains] at containsH3
+    obtain ⟨f,hf,g,hg,prop⟩ := containsH3
+    have M1_subset_M: ∀ i j, M1 i j → M i j := by aesop
+    -- M1   g(0) g(1) g(2)
+    -- f(0)  1    1    1
+    have m1left: M1 (f 0) (g 0) := by apply prop; simp [HorizontalkPattern]
+    have mleft: M (f 0) (g 0) := by apply M1_subset_M; exact m1left
+    have mid : M1 (f 0) (g 1) := by apply prop; simp [HorizontalkPattern]
+    have m1right: M1 (f 0) (g 2) := by apply prop; simp [HorizontalkPattern]
+    have mright: M (f 0) (g 2) := by apply M1_subset_M; exact m1right
+    simp [M1,min_or_max_of_row] at mid
+    simp [StrictMono] at hg
+    cases mid.right with
+    | inl g1min =>
+      have: g 1 ≤ g 0 := by apply g1min; exact mleft
+      have: g 0 < g 1 := by simp [hg]
+      omega
+    | inr g1max =>
+      have: g 2 ≤ g 1 := by apply g1max; exact mright
+      have: g 1 < g 2 := by simp [hg]
+      omega
+    done
+
+  case proof_M2_avoids_V2 =>
     by_contra containsV2
     simp [contains] at containsV2
     obtain ⟨f,hf,g,hg,prop⟩ := containsV2
@@ -702,15 +764,17 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
     let j := g 0
     simp [VerticalTwoPattern] at prop
     have M2y : M2 i j := by apply prop
-    simp [M2, M1,Pred_min_or_max_Ofrow] at M2y
+    simp [M2, M1,min_or_max_of_row] at M2y
     have H:  (∃ a, M i a ∧ a < j) ∧ (∃ b, M i b ∧ j < b)  := by exact M2y.2
     obtain ⟨a,ha1,ha2⟩ := H.left
     obtain ⟨b,hb1,hb2⟩ := H.right
     have alb : a < b := by omega
+
     let g' : Fin 3 → Fin n:= ![ a, g 0, b]
     have monog' : StrictMono g' := by
-      simp [StrictMono, g']
+      simp [StrictMono]
       intro x y ha
+      simp [g']
       fin_cases x
       fin_cases y; contradiction; simp [ha2]   ; simp [alb]
       fin_cases y; contradiction; contradiction; simp [hb2]
@@ -723,6 +787,7 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
     have : contains HatPattern M  := by
       rw [contains]
       refine ⟨f,hf,g',monog', ?_⟩
+      have M2_subset_M: ∀ i j, M2 i j → M i j := by aesop
       -- We prove forall a,b, HatPattern a b => M (f a) (g' b)
       intro i_row j_col H
       fin_cases i_row
@@ -730,25 +795,25 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
       · contradiction
       ·
         simp [g']
-        apply M2SubsetM (f 0) (g 0)
+        apply M2_subset_M (f 0) (g 0)
         apply prop 0 0
       · contradiction
       fin_cases j_col -- bottom part of hat pattern
       · simp [ha1,g']
       ·
         simp [g']
-        apply M2SubsetM (f 1) (g 0)
+        apply M2_subset_M (f 1) (g 0)
         apply prop 1 0
       · simp [g', hb1]
     contradiction
     done
 
-  have dm1: density M1 ≤ 2*n := by
+  /-  old long proof (it works but too long)
     have h_row_one: ∀ i, row_density M1 i ≤ 2 := by
       intro i
       by_contra H
       simp [row_density] at H
-      have: ∃ u : Fin n, M1 i u ∧ ¬ (Pred_min_or_max_Ofrow i u) := ?proof_mid_point_exist
+      have: ∃ u : Fin n, M1 i u ∧ ¬ (min_or_max_of_row i u) := ?proof_mid_point_exist
       simp [M1] at this
       obtain ⟨u, ⟨uinM,h1⟩ ,h2⟩ := this
       contradiction
@@ -766,7 +831,7 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
         let x := f 0; have hx: x ∈ s := by simp [x,f]
         let y := f 1; have hy: y ∈ s := by simp [y,f]
         let z := f 2; have hz: z ∈ s := by simp [z,f]
-        have: x < y ∧  y < z := by simp [x,y,z] --[OrderEmbedding.lt_iff_lt]
+        have: x < y ∧  y < z := by simp only [OrderEmbedding.lt_iff_lt, Fin.reduceLT, and_self, x, y, z]
         obtain ⟨xy,yz⟩ := this
         have M1ix : M1 i x := by
           simp [s] at hx
@@ -787,59 +852,24 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
           · rwa [h2]
           · rwa [h3]
         have Mix : M i x := by
-          apply M1SubsetM
+          apply M1_subset_M
           exact M1ix
         have Miz : M i z := by
-          apply M1SubsetM
+          apply M1_subset_M
           exact M1iz
+        -- main proof
         use y
         constructor
         · -- Proof: M1 i y
           exact M1iy
         · -- Proof: y not min nor max
-          simp [Pred_min_or_max_Ofrow]
+          simp [min_or_max_of_row]
           constructor
           · -- Proof: y is not min
             use x
           · -- Proof: y is not max
             use z
 
-    have:= UB_density_by_rows M1 h_row_one
-    omega
-
-  have dm2: density M2 ≤ n := calc
-    density M2 ≤ ex VerticalTwoPattern n := avoid_le_ex M2 M2_avoids_V2
-    _ = n  := exVerticalTwoPattern n
-
-  calc
-    density M = density M1 + density M2 := split_dm
-    _         ≤ 2*n + density M2      := by simp only [dm1, add_le_add_iff_right]
-    _         ≤ 2*n + n               := by simp only [dm2, add_le_add_iff_left]
-    _         ≤ 3*n                   := by omega
-
-  done
-    /-- have M1_avoids_H3 : ¬ contains Horizontal3Pattern M1  := by
-    by_contra containsH3
-    simp [contains] at containsH3
-    obtain ⟨f,hf,g,hg,prop⟩ := containsH3
-    -- M1   g(0) g(1) g(2)
-    -- f(0)  1    1    1
-    have m1left: M1 (f 0) (g 0) := by apply prop; simp [Horizontal3Pattern]
-    have mleft: M (f 0) (g 0) := by apply M1SubsetM; exact m1left
-    have mid : M1 (f 0) (g 1) := by apply prop; simp [Horizontal3Pattern]
-    have m1right: M1 (f 0) (g 2) := by apply prop; simp [Horizontal3Pattern]
-    have mright: M (f 0) (g 2) := by apply M1SubsetM; exact m1right
-    simp [M1,Pred_min_or_max_Ofrow] at mid
-    simp [StrictMono] at hg
-    cases mid.right with
-    | inl g1min =>
-      have: g 1 ≤ g 0 := by apply g1min; exact mleft
-      have: g 0 < g 1 := by simp [hg]
-      omega
-    | inr g1max =>
-      have: g 2 ≤ g 1 := by apply g1max; exact mright
-      have: g 1 < g 2 := by simp [hg]
-      omega
-  --/
+    exact UB_density_by_rows M1 h_row_one-/
 
 theorem exIdentitykUB  (n k : ℕ) [NeZero n]  : ex (Identity k) n ≤ (2*n-1)*k := by sorry
