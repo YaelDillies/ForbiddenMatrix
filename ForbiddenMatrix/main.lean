@@ -11,11 +11,13 @@ import Mathlib.Data.Finset.Max
 import Mathlib.Algebra.BigOperators.Group.Finset
 import Mathlib.Data.Set.Pairwise.Basic
 import Mathlib.Data.Finset.Sort
-
+import Mathlib.Order.Synonym
+import Mathlib.Data.Matrix.Basic
 
 
 set_option linter.unusedTactic false
 set_option maxHeartbeats 400000
+
 
 namespace Finset
 variable {ι α : Type*} [CanonicallyLinearOrderedAddCommMonoid α] {s : Finset ι} {f : ι → α}
@@ -25,6 +27,9 @@ variable {ι α : Type*} [CanonicallyLinearOrderedAddCommMonoid α] {s : Finset 
 end Finset
 
 open Finset Set
+open OrderDual
+--open Fin
+attribute [local irreducible] OrderDual
 
 -- def trivialPattern : (α → β → Prop) := [1, 1, 1]
 -- λ x : nat ↦ x + 5
@@ -32,21 +37,29 @@ open Finset Set
 -- ![![a, b, c], ![b, c, d]] : matrix (fin 2) (fin 3) α
 -- see https://leanprover-community.github.io/theories/linear_algebra.html
 -- λ (i : m) (j : n), (_ : α)
-def HatPattern : Fin 2 → Fin 3 → Prop := ![![false, true, false], ![true, false, true]]
+def HatPattern : Fin 2 → Fin 3 → Prop :=
+  ![
+    ![false, true, false],
+    ![true, false, true]
+   ]
+def HatPatternD : Fin 3 → Fin 2 → Prop := ![![true, false], ![false, true], ![true, false]]
 def VerticalTwoPattern : Fin 2 → Fin 1 → Prop := ![![true], ![true]]
 def Horizontal2Pattern : Fin 1 → Fin 2 → Prop := ![![true,true]]
 def Horizontal3Pattern : Fin 1 → Fin 3 → Prop := ![![true,true,true]]
 
 def HorizontalkPattern (k : ℕ) (_ :Fin 1) (_ : Fin k) : Prop := true
+def VerticalkPattern (k : ℕ) (_ :Fin k) (_ : Fin 1) : Prop := true
 def Identity (n : ℕ) (i j : Fin n) : Prop := i = j
 def TwoOneY (i _ : Fin 2) : Prop := i = 0
 def PatternOne : Fin 1 → Fin 1 → Prop := fun _ : Fin 1 => fun _ : Fin 1 => true
 def IdentityB (n : ℕ) (i j : Fin n) : Bool := i = j
 def PatternOneB : Fin 1 → Fin 1 → Bool := fun _ : Fin 1 => fun _ : Fin 1 => true
+
+
 --open Matrix
 --section matrices
 
---def M : matrix (Fin 3) (Fin 3) Prop
+
 
 section contains
 variable {α β γ δ : Type*} [Preorder α] [Preorder β] [Preorder γ] [Preorder δ]
@@ -68,7 +81,7 @@ instance {P : α → β → Bool} {M : γ → δ → Bool}
     Decidable (containsB P M) :=
   inferInstanceAs (Decidable (∃ f : α → γ, StrictMono f ∧ ∃ g : β → δ, StrictMono g ∧ ∀ a b, P a b → M (f a) (g b)))
 
-lemma reflectContain (M : γ → δ → Prop) : contains M M := by
+lemma reflect_contain (M : γ → δ → Prop) : contains M M := by
   refine ⟨id, by simp [StrictMono],id, by simp [StrictMono], ?_ ⟩
   aesop
 
@@ -101,6 +114,123 @@ def exB [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
     [DecidableRel (· < · : α → α → Prop)] [DecidableRel (· < · : β → β → Prop)]
     (P : α → β → Bool) (n : ℕ) : ℕ :=
   exRectB P n n
+
+--def Identity (n : ℕ) (i j : Fin n) : Prop := i = j
+
+
+def L'' : Fin 2 → Fin 2 → Prop :=
+  ![
+    ![false, true],
+    ![true, true]
+  ]
+
+def A' : Fin 2 → Fin 1 → Prop :=
+  ![![true], ![false]]
+def B' : Fin 2 → (Fin 1) → Prop :=
+  ![![false], ![true]]
+
+--def C' : (Fin 3)ᵒᵈ  → Bool := ![true,false,false]
+
+--Matrix.of
+--Fin.revOrderIso
+
+def tranpose (M : α → β → Prop) : β → α  → Prop := fun x y ↦ M y x
+def rev_all_rows (M : α → β → Prop) : α  → βᵒᵈ  → Prop :=  fun i ↦ (M i) ∘ ofDual
+def rot_cw (M : α → β → Prop) :  β → α ᵒᵈ → Prop := (rev_all_rows ∘ tranpose) M
+
+def rev_all_rows_via_list {n : ℕ} (M : α → Fin n → Prop) : α → Fin n → Prop :=
+   fun i ↦
+    let v := Mathlib.Vector.ofFn (M i)
+    let rv := v.reverse
+    fun j : Fin n ↦ rv.get j
+
+--def tranpose (M : α → β → Prop) : β → α  → Prop := fun x y ↦ M y x
+--#check rev_all_rows B
+def L : Fin 2 → Fin 2 → Prop :=
+  ![
+    ![true, false],
+    ![true, true]
+   ]
+def L' : Fin 2 → Fin 2 → Prop :=
+  ![
+    ![true, true],
+    ![true, false]
+  ]
+
+
+def X : (Fin 3)ᵒᵈ → Bool := ![true,false,false] ∘ ofDual
+def Y : Fin 3 → Bool := ![false,false,true]
+
+def A : Fin 1 → Fin 2 → Prop := ![![true, false]]
+def B : Fin 1 → (Fin 2)ᵒᵈ → Prop := ![![true, false]∘ ofDual]
+def C : Fin 1 → (Fin 2) → Prop := ![![false, true]]
+
+#check fun i ↦ (C i) ∘ Fin.revOrderIso
+#check fun i ↦ (B i)
+
+example : (fun i ↦ (C i) ∘ Fin.revOrderIso∘ toDual)  = fun i ↦ (rev_all_rows A i)∘ toDual := by
+  ext i j
+  simp [rev_all_rows,A,C]
+  fin_cases i ; fin_cases j <;> simp [Fin.last,Fin.rev]
+
+-- eample : B2 =    := by
+--  ext
+--  simp [rev_all_rows,A,B]
+
+--def b : (Fin 2)ᵒᵈ → Bool := ![false, true] \comp ofDual
+--#eval b (toDual 0)
+
+-- the elements of (Fin 2)ᵒᵈ are, in order, toDual 1 and toDual 0
+def a : Fin 2 → Bool := ![true, false]
+-- b = rev_all_rows c
+def c : Fin 2 → Bool := ![false, true]
+def b : (Fin 2)ᵒᵈ → Bool := ![false, true]  ∘ ofDual
+
+#eval  (a ∘ Fin.revOrderIso) (toDual 0) = b (toDual 0)
+#eval  (a ∘ Fin.revOrderIso) (toDual 1) = b (toDual 1)
+
+
+example : a ∘ Fin.revOrderIso  =  b  := by
+  ext x
+  --have:= OrderDual.toDual.surjective x
+  --obtain ⟨y,h⟩  :=this
+  --rw [← h]
+  -- one line version of above
+  obtain ⟨y, rfl⟩ := OrderDual.toDual.surjective x
+  fin_cases y <;> rfl
+
+example : a ∘ Fin.revOrderIso ∘ toDual =  b  ∘ toDual := by
+  ext x
+  fin_cases x <;> rfl
+
+
+example : A = rev_all_rows_via_list C := by
+  simp [A, C]
+  ext a b
+  rw [rev_all_rows_via_list]
+  simp [Mathlib.Vector.ofFn]
+  fin_cases a;
+  fin_cases b; simp;
+  exact trivial
+  simp [Mathlib.Vector.ofFn];
+  exact fun a ↦ a
+
+-- example : HatPattern = (rot_cw ∘ rot_cw) HatPattern :=
+--example : HatPattern = (rot_cw ∘ rot_cw ∘ rot_cw ∘ rot_cw) HatPattern := by
+--  simp only [Function.comp_apply]
+--  simp [rot_cw]
+--  ext i j
+--  fin_cases i; simp
+--  fin_cases j; aesop; aesop; aesop
+--  fin_cases j; aesop; aesop; aesop
+--  done
+
+--lemma vpk_eq_rot_hpk (k : ℕ): VerticalkPattern k = rot_cw (HorizontalkPattern k) := by
+--  ext _ j
+--  fin_cases j
+--  rfl
+
+---
 
 @[simp] lemma avoid_le_ex {n : ℕ} {P : α → β → Prop} (M : Fin n → Fin n → Prop) (AvoidP : ¬ contains P M)
 : density M ≤ ex P n :=  by
@@ -358,11 +488,8 @@ theorem exIdentity2UB (n : ℕ) : ex (Identity 2) n ≤ 2*n-1 := by
     ⟩
   done
 
-theorem  exIdentity2EQ  (n : ℕ )[hnz: NeZero n]: 2*n-1 = ex (Identity 2) n  := by
-  have : 2*n-1 ≤ ex (Identity 2) n := exIdentity2LB n
-  have : 2*n-1 ≥ ex (Identity 2) n := exIdentity2UB n
-  omega
-  done
+theorem exIdentity2  (n : ℕ )[NeZero n]: 2*n-1 = ex (Identity 2) n  :=
+  Eq.symm (Nat.le_antisymm  (exIdentity2UB n)  (exIdentity2LB n))
 
 theorem exVerticalTwoPattern (n : ℕ)  [NeZero n]  : ex VerticalTwoPattern n = n := by
   have UB: ex VerticalTwoPattern n ≤ n := ?Proof_UB
@@ -476,7 +603,7 @@ theorem exVerticalTwoPattern (n : ℕ)  [NeZero n]  : ex VerticalTwoPattern n = 
 
 --lemma rotationInvariant (P : α → β → Prop) := ex P n = ex rotate(P) n := by sorry
 --#eval sup {j | false} id
-lemma split_density {n : ℕ} [NeZero n] (M : Fin n → Fin n → Prop) (Pred: Fin n → Fin n → Prop) :
+lemma split_density {n : ℕ} (M : Fin n → Fin n → Prop) (Pred: Fin n → Fin n → Prop) :
 let M1 (i j : Fin n) : Prop := M i j ∧   (Pred i j);
 let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (Pred i j);
 density M = density M1 + density M2 := by
@@ -526,8 +653,9 @@ density M = density M1 + density M2 := by
   rw [← seqs1s2] at s1eqs2card
   aesop
 
+
 --open scoped Classical in noncomputable
-lemma split_density_to_rows {n:ℕ} [NeZero n] (M : Fin n → Fin n → Prop) : density M = ∑ i,  row_density M i := by
+lemma split_density_to_rows {n:ℕ} (M : Fin n → Fin n → Prop) : density M = ∑ i,  row_density M i := by
   classical
   let s : Finset (Fin n × Fin n) := { (x,y)| M x y}
   let f : Fin n × Fin n → Fin n  := fun x ↦ x.1
@@ -546,7 +674,11 @@ lemma split_density_to_rows {n:ℕ} [NeZero n] (M : Fin n → Fin n → Prop) : 
   case proof_fiber_row_density =>
     intro k
     simp [row_density]
-    let s := filter (fun x_1 ↦ x_1.1 = k) {(x,y)| M x y}
+    apply Finset.card_bij (fun (a:Fin n × Fin n)  _ ↦ a.2 ) ?hi ?i_inj ?i_surj; aesop;aesop;aesop
+
+    -- 30 lines --> 1 lines using apply (and lean will figure out what is needed.)
+
+    /-let s := filter (fun x_1 ↦ x_1.1 = k) {(x,y)| M x y}
     let t := filter (fun j ↦ M k j) Finset.univ
     let i : (a :Fin n × Fin n) → a ∈ s → Fin n := fun a h ↦ a.2
     let hi : ∀ (a : Fin n × Fin n) (ha : a ∈ s), i a ha ∈ t := by
@@ -576,13 +708,13 @@ lemma split_density_to_rows {n:ℕ} [NeZero n] (M : Fin n → Fin n → Prop) : 
       use ha
     have:= Finset.card_bij i hi i_inj i_surj
     convert this
-    done
+    done-/
 
 
 --  classical
   --pairwise disjoint union is too hard
 
-lemma UB_density_by_rows {n c:ℕ} [NeZero n] (M : Fin n → Fin n → Prop)
+lemma UB_density_by_rows {n c:ℕ}  (M : Fin n → Fin n → Prop)
 (h_row_density_bounded: ∀i, row_density M i ≤ c) : density M ≤  n * c  :=  calc
     density M = ∑ i,  row_density M i := split_density_to_rows M
     _         ≤ ∑ _, c := by
@@ -593,7 +725,7 @@ lemma UB_density_by_rows {n c:ℕ} [NeZero n] (M : Fin n → Fin n → Prop)
 
 -- Finset.card_disjiUnion
 -- open BigOperators
-example (n :ℕ) [NeZero n]  : ex Horizontal2Pattern n ≤ n := by
+example (n :ℕ)  : ex Horizontal2Pattern n ≤ n := by
   classical
   simp [ex]
   intro M noH2P
@@ -631,19 +763,12 @@ example (n :ℕ) [NeZero n]  : ex Horizontal2Pattern n ≤ n := by
       have hg' : StrictMono g' := by
         simp [StrictMono];
         intro x y hxy;
-        fin_cases x
-        fin_cases y; contradiction; aesop
-        fin_cases y; aesop; contradiction
+        fin_cases x <;> fin_cases y <;> all_goals (aesop)
       rw [contains]
       refine ⟨f,hf,g',hg', ?_⟩
+      simp [g']
       intro a b ha'
-      fin_cases a; fin_cases b
-      ·
-        simp [g']
-        assumption
-      ·
-        simp [g']
-        exact prop.1
+      fin_cases a ; fin_cases b <;> all_goals (aesop)
     contradiction
     done
 
@@ -668,7 +793,7 @@ example (n :ℕ) [NeZero n]  : ex Horizontal2Pattern n ≤ n := by
     have:= UB_density_by_rows M1 h_row_one; simp at this
     exact this
 
-theorem exHorizontalkPatternUB (k n: ℕ) [NeZero n] : ex (HorizontalkPattern k) n ≤ n*(k-1) := by
+theorem exHorizontalkPatternUB (k n: ℕ) : ex (HorizontalkPattern k) n ≤ n*(k-1) := by
   classical
   simp only [ex, Finset.sup_le_iff, mem_filter, Finset.mem_univ, true_and]
   intro M NoHPk
@@ -695,10 +820,43 @@ theorem exHorizontalkPatternUB (k n: ℕ) [NeZero n] : ex (HorizontalkPattern k)
         simp [s] at this
         exact this
 
---theorem exHorizontal3PatternUB (n :ℕ) [NeZero n] : ex Horizontal3Pattern n ≤ 2*n := by
---  classical
---  sorry
--- Can try to get optimal bound here.
+theorem exVerticalkPatternUB (k n : ℕ ) : ex (VerticalkPattern k) n ≤ n*(k-1) := by
+  classical
+  have: ex (VerticalkPattern k) n ≤ ex ( tranpose (VerticalkPattern k)) n := ?exv
+
+  calc
+    ex (VerticalkPattern k) n ≤ ex ( tranpose (VerticalkPattern k))  n := this
+    _                         = ex ( HorizontalkPattern k )  n  := by rfl
+    _                         ≤ n*(k-1) := exHorizontalkPatternUB k n
+
+  case exv =>
+    simp [ex]
+    intro M hM
+    rw [← ex]
+
+    let M' := tranpose M
+    have hM': ¬ contains (tranpose (VerticalkPattern k)) M' := by
+      by_contra H
+      simp [contains] at H
+      obtain ⟨f,hf,g,hg,prop⟩ := H
+      simp [M', tranpose, VerticalkPattern] at prop
+      have: contains (VerticalkPattern k) M := by
+        simp [contains]
+        refine ⟨g,hg,f,hf, by
+          simp [VerticalkPattern]
+          intro a ha
+          apply prop
+        ⟩
+      contradiction
+
+    have dmeqdm' : density M = density M' :=  by
+      apply Finset.card_bij (fun a _ ↦ (a.2,a.1)) ?hi ?i_inj ?i_surj; aesop;aesop;aesop
+
+    calc
+      density M = density M' := dmeqdm'
+      _         ≤ ex (tranpose (VerticalkPattern k)) n := (avoid_le_ex M' hM')
+
+
 theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
   classical
   simp [ex]
@@ -754,57 +912,45 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
   case proof_M2_avoids_V2 =>
     by_contra containsV2
     simp [contains] at containsV2
-    obtain ⟨f,hf,g,hg,prop⟩ := containsV2
+    obtain ⟨f,hf,g,hg,v2_to_M2⟩ := containsV2
 
     -- M2  g(0)
     -- f(0) 1
     -- f(1) 1
-
     let i := f 1
     let j := g 0
-    simp [VerticalTwoPattern] at prop
-    have M2y : M2 i j := by apply prop
+
+    simp [VerticalTwoPattern] at v2_to_M2
+    have M2y : M2 i j := by apply v2_to_M2
     simp [M2, M1,min_or_max_of_row] at M2y
-    have H:  (∃ a, M i a ∧ a < j) ∧ (∃ b, M i b ∧ j < b)  := by exact M2y.2
-    obtain ⟨a,ha1,ha2⟩ := H.left
-    obtain ⟨b,hb1,hb2⟩ := H.right
-    have alb : a < b := by omega
+    obtain ⟨⟨a,ha1,ha2⟩,⟨b,hb1,hb2⟩⟩ : (∃ a, M i a ∧ a < j) ∧ (∃ b, M i b ∧ j < b)  := M2y.2
+    --have alb : a < b := by omega
 
     let g' : Fin 3 → Fin n:= ![ a, g 0, b]
     have monog' : StrictMono g' := by
       simp [StrictMono]
-      intro x y ha
-      simp [g']
-      fin_cases x
-      fin_cases y; contradiction; simp [ha2]   ; simp [alb]
-      fin_cases y; contradiction; contradiction; simp [hb2]
-      fin_cases y; contradiction; contradiction; contradiction
+      intro x y _
+      fin_cases x <;> fin_cases y <;> simp [g'] <;> all_goals (first| {aesop} | omega)
+--      fin_cases x <;> fin_cases y <;> simp
+--      contradiction; exact ha2   ; omega
+--      contradiction; contradiction; exact hb2
+--      contradiction; contradiction; contradiction
 
       --   M   a j/g(0) b
       --  f(0)     1
-      -- i/f(1) 1  1  1
+      -- i/f(1) 1     1
 
     have : contains HatPattern M  := by
       rw [contains]
-      refine ⟨f,hf,g',monog', ?_⟩
-      have M2_subset_M: ∀ i j, M2 i j → M i j := by aesop
-      -- We prove forall a,b, HatPattern a b => M (f a) (g' b)
-      intro i_row j_col H
-      fin_cases i_row
-      fin_cases j_col -- top part of hat pattern
-      · contradiction
-      ·
-        simp [g']
-        apply M2_subset_M (f 0) (g 0)
-        apply prop 0 0
-      · contradiction
-      fin_cases j_col -- bottom part of hat pattern
-      · simp [ha1,g']
-      ·
-        simp [g']
-        apply M2_subset_M (f 1) (g 0)
-        apply prop 1 0
-      · simp [g', hb1]
+      refine ⟨f,hf,g',monog', by
+        -- We prove forall a,b, HatPattern a b => M (f a) (g' b)
+        intro i_row j_col H
+        fin_cases i_row <;> fin_cases j_col <;> simp [g'] <;> repeat (any_goals (first| exact ha1| exact hb1 | contradiction) )
+        · -- i_row=0,j_col=1
+          show M (f 0) j
+          have M2_subset_M: ∀ i j, M2 i j → M i j := by aesop
+          exact M2_subset_M (f 0) j (v2_to_M2 0 0)
+      ⟩
     contradiction
     done
 
@@ -872,4 +1018,4 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
 
     exact UB_density_by_rows M1 h_row_one-/
 
-theorem exIdentitykUB  (n k : ℕ) [NeZero n]  : ex (Identity k) n ≤ (2*n-1)*k := by sorry
+theorem exIdentitykUB  (n k : ℕ)  : ex (Identity k) n ≤ (2*n-1)*k := by sorry
