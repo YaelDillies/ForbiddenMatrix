@@ -13,10 +13,15 @@ import Mathlib.Data.Set.Pairwise.Basic
 import Mathlib.Data.Finset.Sort
 import Mathlib.Order.Synonym
 import Mathlib.Data.Matrix.Basic
+import Mathlib.Tactic.Linarith.Frontend
+
+--import Duper
+
+--example : True := by duper
 
 
 set_option linter.unusedTactic false
-set_option maxHeartbeats 400000
+set_option maxHeartbeats 800000
 
 
 namespace Finset
@@ -42,8 +47,17 @@ def HatPattern : Fin 2 → Fin 3 → Prop :=
     ![false, true, false],
     ![true, false, true]
    ]
-def HatPatternD : Fin 3 → Fin 2 → Prop := ![![true, false], ![false, true], ![true, false]]
-def VerticalTwoPattern : Fin 2 → Fin 1 → Prop := ![![true], ![true]]
+def HatPatternD : Fin 3 → Fin 2 → Prop :=
+  ![
+    ![true, false],
+    ![false, true],
+    ![true, false]
+   ]
+def VerticalTwoPattern : Fin 2 → Fin 1 → Prop :=
+  ![
+    ![true],
+    ![true]
+   ]
 def Horizontal2Pattern : Fin 1 → Fin 2 → Prop := ![![true,true]]
 def Horizontal3Pattern : Fin 1 → Fin 3 → Prop := ![![true,true,true]]
 
@@ -376,7 +390,7 @@ lemma  exIdentity2LB  (n : ℕ )[NeZero n]: 2*n-1 ≤ ex (Identity 2) n  := by
 
 
 
-theorem exIdentity2UB (n : ℕ) : ex (Identity 2) n ≤ 2*n-1 := by
+lemma exIdentity2UB (n : ℕ) : ex (Identity 2) n ≤ 2*n-1 := by
   classical
   rw [ex]
   simp
@@ -491,7 +505,7 @@ theorem exIdentity2UB (n : ℕ) : ex (Identity 2) n ≤ 2*n-1 := by
 theorem exIdentity2  (n : ℕ )[NeZero n]: 2*n-1 = ex (Identity 2) n  :=
   Eq.symm (Nat.le_antisymm  (exIdentity2UB n)  (exIdentity2LB n))
 
-theorem exVerticalTwoPattern (n : ℕ)  [NeZero n]  : ex VerticalTwoPattern n = n := by
+lemma exVerticalTwoPattern (n : ℕ)  [NeZero n]  : ex VerticalTwoPattern n = n := by
   have UB: ex VerticalTwoPattern n ≤ n := ?Proof_UB
   have LB: n ≤ ex VerticalTwoPattern n := ?Proof_LB
   exact Nat.le_antisymm UB LB
@@ -514,12 +528,14 @@ theorem exVerticalTwoPattern (n : ℕ)  [NeZero n]  : ex VerticalTwoPattern n = 
       have f_inj : ∀ i < n, ∀ j < n, f i = f j → i = j := by
         intro i hi j hj fieqfj
         simp [f] at fieqfj
+
         have natCast_injOn_Fin := CharP.natCast_injOn_Iio (Fin n) n -- coercion N -> Fin n is only injective on [0, n[
         apply natCast_injOn_Fin at fieqfj; simpa;simpa;simpa
         -- Daniel Weber said that the problem is that (5 : Fin 3) = (8 : Fin 3), so you need h1 and h2 to remove the cast.
         -- https://leanprover.zulipchat.com/#narrow/stream/113489-new-members/topic/Casting.20Fin.20n.20to.20Nat/near/474463179
         --apply_fun Fin.val at fieqfj
         --rwa [Fin.val_cast_of_lt hi, Fin.val_cast_of_lt hj] at fieqfj
+
       refine le_card_of_inj_on_range f ?_ f_inj
       intro i hi
       simp [f]
@@ -603,7 +619,7 @@ theorem exVerticalTwoPattern (n : ℕ)  [NeZero n]  : ex VerticalTwoPattern n = 
 
 --lemma rotationInvariant (P : α → β → Prop) := ex P n = ex rotate(P) n := by sorry
 --#eval sup {j | false} id
-lemma split_density {n : ℕ} (M : Fin n → Fin n → Prop) (Pred: Fin n → Fin n → Prop) :
+theorem split_density {n : ℕ} (M : Fin n → Fin n → Prop) (Pred: Fin n → Fin n → Prop) :
 let M1 (i j : Fin n) : Prop := M i j ∧   (Pred i j);
 let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (Pred i j);
 density M = density M1 + density M2 := by
@@ -655,7 +671,7 @@ density M = density M1 + density M2 := by
 
 
 --open scoped Classical in noncomputable
-lemma split_density_to_rows {n:ℕ} (M : Fin n → Fin n → Prop) : density M = ∑ i,  row_density M i := by
+theorem split_density_to_rows {n:ℕ} (M : Fin n → Fin n → Prop) : density M = ∑ i,  row_density M i := by
   classical
   let s : Finset (Fin n × Fin n) := { (x,y)| M x y}
   let f : Fin n × Fin n → Fin n  := fun x ↦ x.1
@@ -714,7 +730,7 @@ lemma split_density_to_rows {n:ℕ} (M : Fin n → Fin n → Prop) : density M =
 --  classical
   --pairwise disjoint union is too hard
 
-lemma UB_density_by_rows {n c:ℕ}  (M : Fin n → Fin n → Prop)
+theorem UB_density_by_rows {n c:ℕ}  (M : Fin n → Fin n → Prop)
 (h_row_density_bounded: ∀i, row_density M i ≤ c) : density M ≤  n * c  :=  calc
     density M = ∑ i,  row_density M i := split_density_to_rows M
     _         ≤ ∑ _, c := by
@@ -765,10 +781,11 @@ example (n :ℕ)  : ex Horizontal2Pattern n ≤ n := by
         intro x y hxy;
         fin_cases x <;> fin_cases y <;> all_goals (aesop)
       rw [contains]
-      refine ⟨f,hf,g',hg', ?_⟩
-      simp [g']
-      intro a b ha'
-      fin_cases a ; fin_cases b <;> all_goals (aesop)
+      refine ⟨f,hf,g',hg', by
+        -- show embedding of [1 1] pattern
+        intro a b _
+        fin_cases a ; fin_cases b <;> all_goals (aesop)
+      ⟩
     contradiction
     done
 
@@ -808,7 +825,7 @@ theorem exHorizontalkPatternUB (k n: ℕ) : ex (HorizontalkPattern k) n ≤ n*(k
     let s : Finset (Fin n) := {j | M i j}
     have h: k ≤ s.card := by simp [s]; omega
     let g := s.orderEmbOfCardLe h
-    have HPk : contains (HorizontalkPattern k) M := ?proof_HPk
+    have: contains (HorizontalkPattern k) M := ?proof_HPk
     contradiction
     case proof_HPk =>
       simp [contains]
@@ -833,19 +850,14 @@ theorem exVerticalkPatternUB (k n : ℕ ) : ex (VerticalkPattern k) n ≤ n*(k-1
     simp [ex]
     intro M hM
     rw [← ex]
-
     let M' := tranpose M
     have hM': ¬ contains (tranpose (VerticalkPattern k)) M' := by
       by_contra H
-      simp [contains] at H
-      obtain ⟨f,hf,g,hg,prop⟩ := H
-      simp [M', tranpose, VerticalkPattern] at prop
+      obtain ⟨f,hf,g,hg, emb_pat_to_M'⟩ := H
       have: contains (VerticalkPattern k) M := by
-        simp [contains]
         refine ⟨g,hg,f,hf, by
-          simp [VerticalkPattern]
-          intro a ha
-          apply prop
+          intro a b
+          apply emb_pat_to_M'
         ⟩
       contradiction
 
@@ -875,7 +887,7 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
 
   have dm2: density M2 ≤ n := calc
     density M2 ≤ ex VerticalTwoPattern n := avoid_le_ex M2 M2_avoids_V2
-    _          = n                       := exVerticalTwoPattern n
+    _          = n                       := exVerticalTwoPattern  n
 
   calc
     density M = density M1 + density M2 := split_density M min_or_max_of_row
@@ -887,69 +899,68 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
   case proof_M1_avoids_H3 =>
     by_contra containsH3
     simp [contains] at containsH3
-    obtain ⟨f,hf,g,hg,prop⟩ := containsH3
-    have M1_subset_M: ∀ i j, M1 i j → M i j := by aesop
+    obtain ⟨f,_,g,g_mono,prop⟩ :
+      ∃ f, StrictMono f ∧
+      ∃ g, StrictMono g ∧
+      ∀ (a : Fin 1) (b : Fin 3),
+        HorizontalkPattern 3 a b → M1 (f a) (g b)
+      := containsH3
+    simp [HorizontalkPattern] at prop
+    -- prop:
     -- M1   g(0) g(1) g(2)
     -- f(0)  1    1    1
-    have m1left: M1 (f 0) (g 0) := by apply prop; simp [HorizontalkPattern]
-    have mleft: M (f 0) (g 0) := by apply M1_subset_M; exact m1left
-    have mid : M1 (f 0) (g 1) := by apply prop; simp [HorizontalkPattern]
-    have m1right: M1 (f 0) (g 2) := by apply prop; simp [HorizontalkPattern]
-    have mright: M (f 0) (g 2) := by apply M1_subset_M; exact m1right
-    simp [M1,min_or_max_of_row] at mid
-    simp [StrictMono] at hg
-    cases mid.right with
-    | inl g1min =>
-      have: g 1 ≤ g 0 := by apply g1min; exact mleft
-      have: g 0 < g 1 := by simp [hg]
+    simp [M1] at prop
+    obtain ⟨_,h_min_max_g1⟩ : M (f 0) (g 1) ∧ min_or_max_of_row (f 0) (g 1) := prop 0 1
+    -- since g(1) in M1, g(1) is either min or max
+    cases h_min_max_g1 with
+     | inl g1_min =>
+      have: g 1 ≤ g 0 := by aesop (add simp g1_min)
+      have: g 0 < g 1 := by aesop (add simp g_mono)
       omega
-    | inr g1max =>
-      have: g 2 ≤ g 1 := by apply g1max; exact mright
-      have: g 1 < g 2 := by simp [hg]
+     | inr g1_max =>
+      have: g 2 ≤ g 1 := by aesop (add simp g1_max)
+      have: g 1 < g 2 := by aesop (add simp g_mono)
       omega
     done
 
   case proof_M2_avoids_V2 =>
     by_contra containsV2
     simp [contains] at containsV2
-    obtain ⟨f,hf,g,hg,v2_to_M2⟩ := containsV2
+    obtain ⟨f,hf,g,_,v2_to_M2⟩ :
+      ∃ f, StrictMono f ∧
+      ∃ g, StrictMono g ∧
+      ∀ (a : Fin 2) (b : Fin 1),
+      VerticalTwoPattern a b → M2 (f a) (g b)
+      := containsV2
+    simp [VerticalTwoPattern,M2] at v2_to_M2
 
+    -- v2_to_M2:
     -- M2  g(0)
     -- f(0) 1
     -- f(1) 1
+
     let i := f 1
     let j := g 0
 
-    simp [VerticalTwoPattern] at v2_to_M2
-    have M2y : M2 i j := by apply v2_to_M2
-    simp [M2, M1,min_or_max_of_row] at M2y
-    obtain ⟨⟨a,ha1,ha2⟩,⟨b,hb1,hb2⟩⟩ : (∃ a, M i a ∧ a < j) ∧ (∃ b, M i b ∧ j < b)  := M2y.2
-    --have alb : a < b := by omega
+    obtain ⟨_,h_non_min_max⟩  :=  v2_to_M2 1 0
+    simp [min_or_max_of_row] at h_non_min_max
+    obtain ⟨⟨a,ha1,ha2⟩,⟨b,hb1,hb2⟩⟩ : (∃ a, M i a ∧ a < j) ∧ (∃ b, M i b ∧ j < b)  := h_non_min_max
 
-    let g' : Fin 3 → Fin n:= ![ a, g 0, b]
+    --   M    a  j  b
+    --  f(0)     1
+    --   i    1     1
+
+    let g' : Fin 3 → Fin n:= ![ a, j , b]
     have monog' : StrictMono g' := by
       simp [StrictMono]
       intro x y _
-      fin_cases x <;> fin_cases y <;> simp [g'] <;> all_goals (first| {aesop} | omega)
---      fin_cases x <;> fin_cases y <;> simp
---      contradiction; exact ha2   ; omega
---      contradiction; contradiction; exact hb2
---      contradiction; contradiction; contradiction
-
-      --   M   a j/g(0) b
-      --  f(0)     1
-      -- i/f(1) 1     1
+      fin_cases x <;> fin_cases y <;> simp [g'] <;> all_goals (first| contradiction | omega)
 
     have : contains HatPattern M  := by
       rw [contains]
       refine ⟨f,hf,g',monog', by
-        -- We prove forall a,b, HatPattern a b => M (f a) (g' b)
-        intro i_row j_col H
-        fin_cases i_row <;> fin_cases j_col <;> simp [g'] <;> repeat (any_goals (first| exact ha1| exact hb1 | contradiction) )
-        · -- i_row=0,j_col=1
-          show M (f 0) j
-          have M2_subset_M: ∀ i j, M2 i j → M i j := by aesop
-          exact M2_subset_M (f 0) j (v2_to_M2 0 0)
+        intro x y _
+        fin_cases x <;> fin_cases y <;> all_goals (aesop (add simp HatPattern))
       ⟩
     contradiction
     done
@@ -1018,4 +1029,86 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
 
     exact UB_density_by_rows M1 h_row_one-/
 
-theorem exIdentitykUB  (n k : ℕ)  : ex (Identity k) n ≤ (2*n-1)*k := by sorry
+-- aesop
+--set_option trace.aesop true
+
+theorem exIdentitykUB  (n k : ℕ) [NeZero n] : ex (Identity k) n ≤ (2*n-1)*(k-1) := by
+  classical
+  simp [ex]
+  intro M avoid_Ik
+  by_contra! M_large_density
+  simp [density] at M_large_density
+
+  let f : Fin n × Fin n → ℤ := fun ⟨i, j⟩ ↦ i-j
+  let s := (filter (fun (i, j) ↦ M i j) univ)
+  let t : Finset ℤ := Icc (-n + 1) (n - 1)
+
+  have:  ∃ p ∈ t, k-1 < (filter (fun x ↦ f x = p) s).card := by
+    apply exists_lt_card_fiber_of_mul_lt_card_of_maps_to
+    · simp [s,f,t]; omega;
+    · simp [s, t]
+      cases n
+      · contradiction
+      simp_all
+      rw [← Nat.cast_add_one, ← Nat.cast_add, Int.toNat_ofNat]
+      rename_i n _
+      have: (n + 1 + n)  = (2 * (n + 1) - 1) := by omega
+      rw [this]
+      omega
+
+  obtain ⟨p, hp, hp'⟩ := this
+  let set_points_to_p : Finset (Fin n × Fin n):= (filter (fun x ↦ f x = p) s)
+  let set_points_to_p_col : Finset (Fin n):= { x.2 | x ∈ set_points_to_p}
+
+  have:  set_points_to_p.card = set_points_to_p_col.card := by
+    apply Finset.card_bij (fun a  _ ↦ a.2) ?hi ?i_inj ?i_surj; aesop;aesop;aesop
+
+  have pcardk: k ≤ set_points_to_p.card := by
+    simp_arith at hp'
+    simp [set_points_to_p]
+    omega
+
+  have hcol: k ≤ set_points_to_p_col.card := by omega
+
+  let g := set_points_to_p_col.orderEmbOfCardLe hcol
+  let f' : Fin k → Fin n := fun i ↦ ↑( (p : ℤ)  + ( (g i) : ℤ ))
+  have mono_f: StrictMono f' := by
+    simp [StrictMono]
+    intro a b hb
+    simp [f']
+    have : g a ∈ set_points_to_p_col := set_points_to_p_col.orderEmbOfCardLe_mem hcol a
+    simp [set_points_to_p_col] at this
+    obtain ⟨a',ha' ⟩ := this
+    simp [set_points_to_p,f] at ha'
+    have : g b ∈ set_points_to_p_col := set_points_to_p_col.orderEmbOfCardLe_mem hcol b
+    simp [set_points_to_p_col] at this
+    obtain ⟨b',hb' ⟩ := this
+    simp [set_points_to_p,f] at hb'
+    nth_rewrite 1 [← ha'.2]
+    nth_rewrite 1 [← hb'.2]
+    simp only [Int.cast_sub, Int.cast_natCast, Fin.cast_val_eq_self, sub_add_cancel, gt_iff_lt]
+
+    have ha'' := ha'.2
+    rw [← hb'.2] at ha''
+    have : (a' : ℤ) = ↑↑b' - ↑↑(g b)  + ↑↑(g a) := by omega
+    have : g a < g b := by simpa [StrictMono]
+    omega
+
+  have: contains (Identity k) M := by
+    refine ⟨f', mono_f,g, by simp [StrictMono], /- Embed Identity k to M-/ by
+        intro x y H
+        simp [Identity] at H
+        rw [H]
+        simp [f']
+        have : g y ∈ set_points_to_p_col := set_points_to_p_col.orderEmbOfCardLe_mem hcol y
+        simp [set_points_to_p_col] at this
+        obtain ⟨a,ha⟩ := this
+        simp [set_points_to_p,f] at ha
+        obtain ⟨a1,ha1⟩ := ha
+        simp [s] at a1
+        rw [← ha1]
+        simpa
+      ⟩
+
+  contradiction
+  done
