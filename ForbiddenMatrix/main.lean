@@ -14,6 +14,12 @@ import Mathlib.Data.Finset.Sort
 import Mathlib.Order.Synonym
 import Mathlib.Data.Matrix.Basic
 import Mathlib.Tactic.Linarith.Frontend
+import Mathlib.Logic.Equiv.Set
+import Mathlib.LinearAlgebra.Matrix.Permutation
+
+--Init.Control.Basic
+
+
 
 --import Duper
 
@@ -61,15 +67,45 @@ def VerticalTwoPattern : Fin 2 → Fin 1 → Prop :=
 def Horizontal2Pattern : Fin 1 → Fin 2 → Prop := ![![true,true]]
 def Horizontal3Pattern : Fin 1 → Fin 3 → Prop := ![![true,true,true]]
 
-def HorizontalkPattern (k : ℕ) (_ :Fin 1) (_ : Fin k) : Prop := true
-def VerticalkPattern (k : ℕ) (_ :Fin k) (_ : Fin 1) : Prop := true
-def Identity (n : ℕ) (i j : Fin n) : Prop := i = j
-def TwoOneY (i _ : Fin 2) : Prop := i = 0
-def PatternOne : Fin 1 → Fin 1 → Prop := fun _ : Fin 1 => fun _ : Fin 1 => true
+
+def Horizontal3Patternt : Fin 1 → Fin 3 → Fin 2 := ![![1,1,1]]
+--def HatPatternFin: Fin 2 → Fin 3 → Bool :=
+--  ![
+--    ![0, 1, 0],
+--    ![1, 0, 1]
+--   ]
+--#check HatPatternFin
+def IdentityFin (n : ℕ) (i j : Fin n) : Fin 2 := if i = j then 1 else 0
+
+
+def horizontalkPattern (k : ℕ) (_ :Fin 1) (_ : Fin k) : Prop := true
+def verticalkPattern (k : ℕ) (_ :Fin k) (_ : Fin 1) : Prop := true
+def identityPattern (n : ℕ) (i j : Fin n) : Prop := i = j
+def revIdentityPattern (n : ℕ) (i j : Fin n) : Prop := i + j = n
+--def IdentityF (n : ℕ) (i j : Fin n) : Fin 2 := (i = j :)
+def Perm (k : ℕ) (i j : Fin k) : Prop := i = j
+def onePattern : Fin 1 → Fin 1 → Prop := fun _ : Fin 1 => fun _ : Fin 1 => true
 def IdentityB (n : ℕ) (i j : Fin n) : Bool := i = j
 def PatternOneB : Fin 1 → Fin 1 → Bool := fun _ : Fin 1 => fun _ : Fin 1 => true
 
 
+--variable {α  : Type*} [Preorder α]
+--open scoped Classical in noncomputable
+--def permPatternFin {k:ℕ}(σ : Equiv.Perm (Fin k)) := Equiv.Perm.permMatrix (Fin 2) σ
+
+--def f : Fin 3 → Fin 3 := ![0,2,1 : Fin 3]
+
+def permPatternFin {k:ℕ}(σ : Equiv.Perm (Fin k))  (i j : Fin k): Fin 2 := (Equiv.Perm.permMatrix (Fin 2) σ) i j
+def permPattern {k:ℕ}(σ : Equiv.Perm (Fin k))  (i j : Fin k): Prop := (Equiv.Perm.permMatrix ℕ σ) i j = 1
+--def identity (k :ℕ) (i : Fin k) : Fin k := i
+--#eval  (One (Fin 2))
+--def f : Fin 2 → Fin 2 := ![0,1]
+def permid : Equiv.Perm (Fin 3) := Equiv.refl (Fin 3)
+--#eval permPattern permid
+
+
+--#check permPattern (identity 3)
+--#check permPattenFin
 --open Matrix
 --section matrices
 
@@ -150,6 +186,7 @@ def B' : Fin 2 → (Fin 1) → Prop :=
 
 def tranpose (M : α → β → Prop) : β → α  → Prop := fun x y ↦ M y x
 def rev_all_rows (M : α → β → Prop) : α  → βᵒᵈ  → Prop :=  fun i ↦ (M i) ∘ ofDual
+--def rot_cw (M : α → β → Prop) :  β → α ᵒᵈ → Prop := (rev_all_rows ∘ tranpose) M
 def rot_cw (M : α → β → Prop) :  β → α ᵒᵈ → Prop := (rev_all_rows ∘ tranpose) M
 
 def rev_all_rows_via_list {n : ℕ} (M : α → Fin n → Prop) : α → Fin n → Prop :=
@@ -294,12 +331,12 @@ example : A = rev_all_rows_via_list C := by
     done
 
 
-lemma PatternOneIsIdentity : PatternOne = (Identity 1) := by
+lemma PatternOneIsIdentity : onePattern = (identityPattern 1) := by
   ext -- apply function extensionality for all a F(a) = G(a) => F = G
-  simp [Identity, PatternOne]
+  simp [identityPattern, onePattern]
   exact Subsingleton.elim ..
 
-lemma exPatternOne (n : ℕ) : ex PatternOne n = 0 := by
+lemma exPatternOne (n : ℕ) : ex onePattern n = 0 := by
   rw [ex]
   simp [filter_eq_empty_iff]
   intro M
@@ -312,7 +349,7 @@ lemma exPatternOne (n : ℕ) : ex PatternOne n = 0 := by
   simp [contains]
   refine ⟨fun _ ↦ i, by simp [StrictMono], ![j], by simp [StrictMono], by simp [Mij]⟩
 
-example (n : ℕ) : ex (Identity 1) n = 0 := by
+example (n : ℕ) : ex (identityPattern 1) n = 0 := by
   rw [← PatternOneIsIdentity]
   exact exPatternOne n
 
@@ -324,25 +361,25 @@ lemma injOn_aux (n : ℕ) [NeZero n] :
       ⟨negPart_nonneg _, by simpa [NeZero.pos] using hz.1⟩⟩
 
 --set_option diagnostics true
-lemma  exIdentity2LB  (n : ℕ )[NeZero n]: 2*n-1 ≤ ex (Identity 2) n  := by
+lemma  exIdentity2LB  (n : ℕ )[NeZero n]: 2*n-1 ≤ ex (identityPattern 2) n  := by
   --The following code is a bad style: (a lot of unnecessary casting to deal with, e.g. double-casting)
   --let  M (i j : Fin n) :  Prop := i.val = 0  ∨ j.val = 0
   --Better to use this one:
   let  M (i j : Fin n) :  Prop := i = (0 : Fin n) ∨ j = (0 : Fin n)
-  have : ¬contains (Identity 2) M := ?proof_of_M_avoids_I2
+  have : ¬contains (identityPattern 2) M := ?proof_of_M_avoids_I2
   have : 2*n -1 ≤ density M := ?proof_of_Mhastwon--(filter (fun x ↦ M x.1 x.2 : Fin n × Fin n → Prop) univ).card +1 := ?proof_of_Mhastwon
   -- Main proof starts here --
   rw [le_ex_iff]
   use M
   -- prove that (P is non-empty)
-  case P_nonempty => simp [Identity]
+  case P_nonempty => simp [identityPattern]
 
   -- It remains to prove MavI2 and Mhastwon
   case proof_of_M_avoids_I2 =>
     by_contra h
     simp [contains] at h
     obtain ⟨ f,hf,g, hg, pmap ⟩ := h
-    simp [M, Identity] at pmap
+    simp [M, identityPattern] at pmap
     simp [StrictMono] at hf hg
     have f1g0: 0 < f 1 := by
       by_contra f0
@@ -390,7 +427,7 @@ lemma  exIdentity2LB  (n : ℕ )[NeZero n]: 2*n-1 ≤ ex (Identity 2) n  := by
 
 
 
-lemma exIdentity2UB (n : ℕ) : ex (Identity 2) n ≤ 2*n-1 := by
+lemma exIdentity2UB (n : ℕ) : ex (identityPattern 2) n ≤ 2*n-1 := by
   classical
   rw [ex]
   simp
@@ -463,7 +500,7 @@ lemma exIdentity2UB (n : ℕ) : ex (Identity 2) n ≤ 2*n-1 := by
 
     refine ⟨fM, monof, gM, monog, by
     intro a' b' idab
-    simp [Identity] at idab
+    simp [identityPattern] at idab
     rw [idab]
     simp [fM, gM]
     subst b'
@@ -492,7 +529,7 @@ lemma exIdentity2UB (n : ℕ) : ex (Identity 2) n ≤ 2*n-1 := by
 
     refine ⟨fM, monof, gM, monog, by
       intro a' b' idab
-      simp [Identity] at idab
+      simp [identityPattern] at idab
       rw [idab]
       simp [fM, gM]
       subst b'
@@ -502,7 +539,7 @@ lemma exIdentity2UB (n : ℕ) : ex (Identity 2) n ≤ 2*n-1 := by
     ⟩
   done
 
-theorem exIdentity2  (n : ℕ )[NeZero n]: 2*n-1 = ex (Identity 2) n  :=
+theorem exIdentity2  (n : ℕ )[NeZero n]: 2*n-1 = ex (identityPattern 2) n  :=
   Eq.symm (Nat.le_antisymm  (exIdentity2UB n)  (exIdentity2LB n))
 
 lemma exVerticalTwoPattern (n : ℕ)  [NeZero n]  : ex VerticalTwoPattern n = n := by
@@ -730,7 +767,7 @@ theorem split_density_to_rows {n:ℕ} (M : Fin n → Fin n → Prop) : density M
 --  classical
   --pairwise disjoint union is too hard
 
-theorem UB_density_by_rows {n c:ℕ}  (M : Fin n → Fin n → Prop)
+theorem density_by_rows_ub {n c:ℕ}  (M : Fin n → Fin n → Prop)
 (h_row_density_bounded: ∀i, row_density M i ≤ c) : density M ≤  n * c  :=  calc
     density M = ∑ i,  row_density M i := split_density_to_rows M
     _         ≤ ∑ _, c := by
@@ -750,9 +787,9 @@ example (n :ℕ)  : ex Horizontal2Pattern n ≤ n := by
   let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (Pred_min_Ofrow i j)
 
   have dm1: density M1 ≤ n:= ?proof_dm1
-  have M2_avoids_trivial : ¬ contains PatternOne M2 := ?proof_M2_av_trivial
+  have M2_avoids_trivial : ¬ contains onePattern M2 := ?proof_M2_av_trivial
   have dm2: density M2 ≤ 0 := calc
-    density M2 ≤ ex PatternOne n := avoid_le_ex M2 M2_avoids_trivial
+    density M2 ≤ ex onePattern n := avoid_le_ex M2 M2_avoids_trivial
     _ = 0  := exPatternOne n
 
   calc
@@ -770,7 +807,7 @@ example (n :ℕ)  : ex Horizontal2Pattern n ≤ n := by
       --  f(0)     1
     simp [M2] at prop
     specialize prop 0 0
-    simp [PatternOne, Pred_min_Ofrow] at prop
+    simp [onePattern, Pred_min_Ofrow] at prop
     obtain ⟨a,ha, ha2⟩ := prop.2
        --   M   a g(0)
       --  f(0)  1  1
@@ -807,15 +844,15 @@ example (n :ℕ)  : ex Horizontal2Pattern n ≤ n := by
           exact ha.1
       contradiction
 
-    have:= UB_density_by_rows M1 h_row_one; simp at this
+    have:= density_by_rows_ub M1 h_row_one; simp at this
     exact this
 
-theorem exHorizontalkPatternUB (k n: ℕ) : ex (HorizontalkPattern k) n ≤ n*(k-1) := by
+theorem ex_horizontal (k n: ℕ) : ex (horizontalkPattern k) n ≤ n*(k-1) := by
   classical
   simp only [ex, Finset.sup_le_iff, mem_filter, Finset.mem_univ, true_and]
   intro M NoHPk
   have h_row_k: ∀ i, row_density M i ≤ k-1  := ?proof_h_row_k
-  exact UB_density_by_rows M h_row_k
+  exact density_by_rows_ub M h_row_k
 
   case proof_h_row_k =>
     intro i
@@ -825,36 +862,36 @@ theorem exHorizontalkPatternUB (k n: ℕ) : ex (HorizontalkPattern k) n ≤ n*(k
     let s : Finset (Fin n) := {j | M i j}
     have h: k ≤ s.card := by simp [s]; omega
     let g := s.orderEmbOfCardLe h
-    have: contains (HorizontalkPattern k) M := ?proof_HPk
+    have: contains (horizontalkPattern k) M := ?proof_HPk
     contradiction
     case proof_HPk =>
       simp [contains]
       refine ⟨![i], by simp [StrictMono],g, by simp [StrictMono, OrderEmbedding.lt_iff_lt], ?EmbedPatttern⟩
       · -- Proof of Embed Pattern
-        simp [HorizontalkPattern]
+        simp [horizontalkPattern]
         intro j
         have: g j ∈ s := s.orderEmbOfCardLe_mem h j
         simp [s] at this
         exact this
 
-theorem exVerticalkPatternUB (k n : ℕ ) : ex (VerticalkPattern k) n ≤ n*(k-1) := by
+theorem ex_vertical (k n : ℕ ) : ex (verticalkPattern k) n ≤ n*(k-1) := by
   classical
-  have: ex (VerticalkPattern k) n ≤ ex ( tranpose (VerticalkPattern k)) n := ?exv
+  have: ex (verticalkPattern k) n ≤ ex ( tranpose (verticalkPattern k)) n := ?exv
 
   calc
-    ex (VerticalkPattern k) n ≤ ex ( tranpose (VerticalkPattern k))  n := this
-    _                         = ex ( HorizontalkPattern k )  n  := by rfl
-    _                         ≤ n*(k-1) := exHorizontalkPatternUB k n
+    ex (verticalkPattern k) n ≤ ex ( tranpose (verticalkPattern k))  n := this
+    _                         = ex ( horizontalkPattern k )  n  := by rfl
+    _                         ≤ n*(k-1) := ex_horizontal k n
 
   case exv =>
     simp [ex]
     intro M hM
     rw [← ex]
     let M' := tranpose M
-    have hM': ¬ contains (tranpose (VerticalkPattern k)) M' := by
+    have hM': ¬ contains (tranpose (verticalkPattern k)) M' := by
       by_contra H
       obtain ⟨f,hf,g,hg, emb_pat_to_M'⟩ := H
-      have: contains (VerticalkPattern k) M := by
+      have: contains (verticalkPattern k) M := by
         refine ⟨g,hg,f,hf, by
           intro a b
           apply emb_pat_to_M'
@@ -866,10 +903,10 @@ theorem exVerticalkPatternUB (k n : ℕ ) : ex (VerticalkPattern k) n ≤ n*(k-1
 
     calc
       density M = density M' := dmeqdm'
-      _         ≤ ex (tranpose (VerticalkPattern k)) n := (avoid_le_ex M' hM')
+      _         ≤ ex (tranpose (verticalkPattern k)) n := (avoid_le_ex M' hM')
 
 
-theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
+theorem ex_hat (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
   classical
   simp [ex]
   intro M noHat
@@ -878,12 +915,12 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
   let M1 (i j : Fin n) : Prop := M i j ∧   (min_or_max_of_row i j)
   let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (min_or_max_of_row i j)
 
-  have M1_avoids_H3 : ¬ contains (HorizontalkPattern 3) M1  := ?proof_M1_avoids_H3
+  have M1_avoids_H3 : ¬ contains (horizontalkPattern 3) M1  := ?proof_M1_avoids_H3
   have M2_avoids_V2 : ¬ contains VerticalTwoPattern M2      := ?proof_M2_avoids_V2
 
   have dm1: density M1 ≤ n*2 := calc
-     density M1 ≤ ex  (HorizontalkPattern 3) n := avoid_le_ex M1 M1_avoids_H3
-     _          ≤ n*2                          := exHorizontalkPatternUB 3 n
+     density M1 ≤ ex  (horizontalkPattern 3) n := avoid_le_ex M1 M1_avoids_H3
+     _          ≤ n*2                          := ex_horizontal 3 n
 
   have dm2: density M2 ≤ n := calc
     density M2 ≤ ex VerticalTwoPattern n := avoid_le_ex M2 M2_avoids_V2
@@ -903,9 +940,9 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
       ∃ f, StrictMono f ∧
       ∃ g, StrictMono g ∧
       ∀ (a : Fin 1) (b : Fin 3),
-        HorizontalkPattern 3 a b → M1 (f a) (g b)
+        horizontalkPattern 3 a b → M1 (f a) (g b)
       := containsH3
-    simp [HorizontalkPattern] at prop
+    simp [horizontalkPattern] at prop
     -- prop:
     -- M1   g(0) g(1) g(2)
     -- f(0)  1    1    1
@@ -1032,7 +1069,7 @@ theorem exHatPatternUB (n : ℕ)  [NeZero n] : ex HatPattern n ≤ 3*n  := by
 -- aesop
 --set_option trace.aesop true
 
-theorem exIdentitykUB  (n k : ℕ) [NeZero n] : ex (Identity k) n ≤ (2*n-1)*(k-1) := by
+theorem ex_identity (k n: ℕ) [NeZero n] : ex (identityPattern k) n ≤ (2*n-1)*(k-1) := by
   classical
   simp [ex]
   intro M avoid_Ik
@@ -1094,10 +1131,10 @@ theorem exIdentitykUB  (n k : ℕ) [NeZero n] : ex (Identity k) n ≤ (2*n-1)*(k
     have : g a < g b := by simpa [StrictMono]
     omega
 
-  have: contains (Identity k) M := by
+  have: contains (identityPattern k) M := by
     refine ⟨f', mono_f,g, by simp [StrictMono], /- Embed Identity k to M-/ by
         intro x y H
-        simp [Identity] at H
+        simp [identityPattern] at H
         rw [H]
         simp [f']
         have : g y ∈ set_points_to_p_col := set_points_to_p_col.orderEmbOfCardLe_mem hcol y
@@ -1112,3 +1149,111 @@ theorem exIdentitykUB  (n k : ℕ) [NeZero n] : ex (Identity k) n ≤ (2*n-1)*(k
 
   contradiction
   done
+
+--∃ a ∈ filter (fun x ↦ f x = y) s, ∃ b ∈ filter (fun x ↦ f x = y) s, a ≠ b
+theorem ex_eq_ex_rot_cw (n : ℕ) (P: α → β → Prop)  : ex P n = ex (rot_cw P) n := sorry
+theorem ex_contains_le_ex (n : ℕ) (P Q: α → β → Prop) (h: contains P Q)   : ex P n ≤ ex Q n := sorry
+theorem n_le_ex_non_trivial  (n : ℕ) (P: α → β → Prop) (h_non_trivial : ∃ x1 y1 x2 y2, P x1 y1 ∧ P x2 y2 ∧ (x1,y1) ≠ (x2,y2)) : n ≤ ex P n := sorry
+--theorem ex_eq_ex_rot_ccw (n : ℕ) {P: α → β → Prop}  : ex P n = ex (rot_ccw P) n := sorry
+--theorem ex_eq_ex_flip_up (n : ℕ) {P: α → β → Prop}  : ex P n = ex (rot_ccw P) n := sorry
+--theorem ex_eq_ex_flip_side (n : ℕ) {P: α → β → Prop}  : ex P n = ex (rot_ccw P) n := sorry
+theorem ex_eq_ex_tranpose (n : ℕ) (P: α → β → Prop)  : ex P n = ex (tranpose P) n := sorry
+
+theorem ex_rev_id_eq_id (k n : ℕ ) : ex (revIdentityPattern k) n  = ex (identityPattern k) n := sorry
+
+-- basic lemma in Marcus Tardos
+--
+open Equiv
+--open Classical
+-- Bij = sq submatrix of M i' j' where i' ∈ [q * (i-1)+1, q* i], j' ∈ [q * (j-1)+1, q * j]
+def block_contract   {n : ℕ} (M : Fin n → Fin n → Prop)  (q : ℕ ) : Fin (n/q) → Fin (n/q) → Prop :=
+  fun i j ↦
+  ∃ p : Fin n × Fin n,   M p.1 p.2  ∧ ↑p.1 ∈ Finset.Icc (q * (i-1)+1) (q* i) ∧ ↑p.2 ∈ Finset.Icc (q * (j-1)+1) (q * j)
+--
+lemma av_perm_contract_av_perm  {n k : ℕ} (q : ℕ)  (σ : Perm (Fin k)) (M : Fin n → Fin n → Prop)
+      (hM: ¬ contains (permPattern σ) M) : ¬ contains (permPattern σ) (block_contract M q)  := by
+--  classical
+  by_contra H
+  simp [contains] at H
+  obtain ⟨f,hf,g,hg, h⟩ := H
+  simp only [block_contract, Finset.mem_Icc] at h
+  simp only [permPattern, PEquiv.toMatrix_apply, toPEquiv, PEquiv.coe_mk, Function.comp_apply,
+    Option.mem_def, Option.some.injEq, ite_eq_left_iff, zero_ne_one, imp_false, Decidable.not_not,
+     forall_eq'] at h
+
+  --      . . g (σ i) . .
+  --  .
+  --  .
+  -- f i         1
+  --  .
+  --  .
+
+  let f' :Fin k → Fin n:= fun i ↦ (h i).choose.1
+
+  have f'_mono: StrictMono f' := by
+    simp [StrictMono,f']
+    simp [StrictMono] at hf
+    intro a b hab
+    have spec_a:= (h a).choose_spec
+    have spec_b:= (h b).choose_spec
+    have ca_ub:= spec_a.2.1.2
+    have cb_lb:= spec_b.2.1.1
+    cases q
+    · simp_all
+    ·
+      rename_i q
+      simp_all
+      calc
+        f' a ≤ (q + 1) * ↑(f a) := ca_ub
+        _   < (q + 1) * (↑(f b) - 1) + 1 := by
+            simp_arith
+            exact Nat.le_sub_one_of_lt (hf hab)
+        _   ≤ f' b := cb_lb
+
+  --            . .  g (i) . .   |     . . g (σ i) . .
+  --  .                          |  .
+  --  .                          |  .
+  -- f (σ⁻¹ i)         1         | f i         1
+  --  .                          |  .
+  --  .                          |  .
+
+  let g' :Fin k → Fin n:= fun i ↦ (h (σ.invFun i)).choose.2
+
+  have g'_mono: StrictMono g' := by
+    simp [StrictMono]
+    simp [StrictMono] at hg
+    intro a b hab
+    have spec_a:=  (h (σ.invFun a)).choose_spec
+    have spec_b:=  (h (σ.invFun b)).choose_spec
+    simp_all
+    have ca_ub := spec_a.2.2.2
+    have cb_lb := spec_b.2.2.1
+
+    cases q
+    · simp_all
+    ·
+      rename_i q
+      calc
+        g' a ≤ (q + 1) * ↑(g a) := by simp_all [g']
+        _   < (q + 1) * (↑(g b) - 1) + 1 := by
+            simp_arith
+            exact Nat.le_sub_one_of_lt (hg hab)
+        _   ≤ g' b := by simp_all [g']
+
+  have: contains (permPattern σ) M := by
+    refine ⟨f',f'_mono,g',g'_mono,
+      by
+      intro i j hab
+      simp only [permPattern, PEquiv.toMatrix_apply, toPEquiv, PEquiv.coe_mk, Function.comp_apply,
+        Option.mem_def, Option.some.injEq, ite_eq_left_iff, zero_ne_one, imp_false,
+        Decidable.not_not] at hab
+      subst hab
+      have := Classical.choose_spec (h i)
+      simp [f',g']
+      simp_all only [f']
+    ⟩
+
+  contradiction
+  done
+
+theorem ex_permutation {k : ℕ } (σ : Perm (Fin k))  (n : ℕ)  : ex (permPattern σ) n  ≤ n*k := sorry
