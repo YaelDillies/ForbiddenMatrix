@@ -39,6 +39,7 @@ end Finset
 
 open Finset Set
 open OrderDual
+open Equiv
 --open Fin
 attribute [local irreducible] OrderDual
 
@@ -1163,7 +1164,199 @@ theorem ex_rev_id_eq_id (k n : ℕ ) : ex (revIdentityPattern k) n  = ex (identi
 
 -- basic lemma in Marcus Tardos
 --
-open Equiv
+
+lemma le_mul_div_add_one {n q :ℕ} (p : Fin n) (h: 0 < q): p < q * (p / q + 1) := by
+  rw [Nat.left_distrib]
+  rw [Nat.mul_comm]
+  simp
+  apply Nat.lt_div_mul_add
+  trivial
+
+--open Classical
+-- Bij = sq submatrix of M i' j' where i' ∈ [q * (i-1)+1, q* i], j' ∈ [q * (j-1)+1, q * j]
+--open scoped Classical in noncomputable
+--def rectPtSetFinn {n: ℕ} (a₁ b₁ a₂ b₂ : Fin n) : Finset (Fin n × Fin n) := (Finset.Icc a₁ (b₁-1)) ×ˢ ((Finset.Icc a₂ (b₂-1))) --({ a | ↑a ∈ Finset.Ico a₁ b₁} : Finset (Fin n)) ×ˢ ({ a | ↑a ∈ Finset.Ico a₂ b₂} : Finset (Fin n))-- {(a,b) | (↑a ∈ Finset.Ico a₁ b₁) ∧ (↑b ∈ Finset.Ico a₂ b₂)}
+def rectPtset (n a₁ b₁ a₂ b₂: ℕ) : Finset (Fin n × Fin n) :=
+  ({ a | ↑a ∈ Finset.Ico a₁ b₁} : Finset (Fin n)) ×ˢ ({ a | ↑a ∈ Finset.Ico a₂ b₂} : Finset (Fin n)) -- {(a,b) | (↑a ∈ Finset.Ico a₁ b₁) ∧ (↑b ∈ Finset.Ico a₂ b₂)}
+
+--def rectPtsetSubset (n a₁ b₁ a₂ b₂: ℕ) (R C : Finset (Fin n)): Finset (Fin n × Fin n) :=
+--  ({ a | a ∈ R ∧ ↑a ∈ Finset.Ico a₁ b₁} : Finset (Fin n)) ×ˢ ({ a | a ∈ C ∧ ↑a ∈ Finset.Ico a₂ b₂} : Finset (Fin n)) -- {(a,b) | (↑a ∈ Finset.Ico a₁ b₁) ∧ (↑b ∈ Finset.Ico a₂ b₂)}
+open scoped Classical in noncomputable
+def rectPtsetMatrix {n :ℕ }(M : Fin n → Fin n → Prop) (a₁ b₁ a₂ b₂: ℕ)  : Finset (Fin n × Fin n) :=
+  {(a,b) | M a b ∧  (a,b) ∈ (rectPtset n a₁ b₁ a₂ b₂)}
+
+-- lemma card_rectPtSetSubset {n : ℕ} (R C : Finset (Fin n)) (h: b₁ ≤ n ∧ b₂ ≤ n): (rectPtsetSubset n a₁ b₁ a₂ b₂ R C).card =  R.card * C.card := by sorry
+def rectPtsetq (n q i j :ℕ) := rectPtset n (q * i) (q * (i+1)) (q * j) (q * (j+1)) --Finset (Fin n × Fin n) := ({ a | ↑a ∈ Finset.Ico (q * i) (q * (i+1))} : Finset (Fin n)) ×ˢ ({ a | ↑a ∈ Finset.Ico (q * j) (q * (j+1))} : Finset (Fin n))-- {(a,b) | (↑a ∈ Finset.Ico a₁ b₁) ∧ (↑b ∈ Finset.Ico a₂ b₂)}
+open scoped Classical in noncomputable
+def rectPtsetqMatrix {n:ℕ }(M : Fin n → Fin n → Prop) (q i j :ℕ) : Finset (Fin n × Fin n) :=  {(a,b) | M a b ∧  (a,b) ∈  rectPtsetq n q i j}
+
+lemma card_rectPtSet (n a₁ b₁ a₂ b₂: ℕ) (h: b₁ ≤ n ∧ b₂ ≤ n): (rectPtset n a₁ b₁ a₂ b₂).card =  (b₁ -a₁ )*(b₂ - a₂) := by
+  simp only [rectPtset, card_product]
+  suffices claim: ∀x y,  y ≤ n → (filter (fun a : Fin n ↦ ↑a ∈ Finset.Ico x y) Finset.univ).card = (Finset.Ico x y).card by aesop
+  -- proof of the claim
+  intro x y hy
+  apply Finset.card_bij (fun (a: Fin n)  _ ↦ ↑a) ?hi ?i_inj ?i_surj;aesop;aesop
+  · -- ?i_surj
+    intro b hb
+    simp at hb
+    have: b < n := by omega
+    use ⟨b,this⟩
+    simp_all only [Finset.mem_Ico, mem_filter, Finset.mem_univ, and_self, exists_const]
+
+lemma card_rectPtsetq (n q i j : ℕ) (hq: q ∣ n) (h: i < n/q ∧ j < n/q) : (rectPtsetq n q i j).card =  q*q := by
+  simp [rectPtsetq]
+  have:= card_rectPtSet n (q * i) (q * (i+1)) (q * j) (q * (j+1)) ?_
+  convert this
+  exact Nat.eq_sub_of_add_eq' rfl
+  exact Nat.eq_sub_of_add_eq' rfl
+  obtain ⟨hi,hj⟩ := h
+  constructor
+  calc
+    q*(i+1) ≤  q*(n/q) := Nat.mul_le_mul_left q hi
+    _       = n        := Nat.mul_div_cancel' hq
+  calc
+    q*(j+1) ≤  q*(n/q) := Nat.mul_le_mul_left q hj
+    _       = n        := Nat.mul_div_cancel' hq
+
+--lemma card_rectPtsetq_subset (n q i j : ℕ) (hq: q ∣ n) (h: i < n/q ∧ j < n/q) : (rectPtsetq n q i j).card =  q*q := sorry
+
+lemma card_rectPtsetqMatrix {n q:ℕ }(M : Fin n → Fin n → Prop) (i j :ℕ) (hq: q ∣ n) (h: i < n/q ∧ j < n/q):
+  (rectPtsetqMatrix M q i j).card ≤ q*q := by
+
+  suffices claim: (rectPtsetqMatrix M q i j).card ≤ (rectPtsetq n q i j).card by calc
+    (rectPtsetqMatrix M q i j).card ≤ (rectPtsetq n q i j).card := claim
+    _                               =  q* q := card_rectPtsetq n q i j hq h
+  -- proof of the claim
+  refine Finset.card_le_card ?_
+  simp only [rectPtsetqMatrix, rectPtsetq, Prod.mk.eta]
+  intro p h
+  simp at h
+  exact h.2
+
+def blkMatrix {n : ℕ} (M : Fin n → Fin n → Prop)  (q : ℕ ) : Fin (n/q) → Fin (n/q) → Prop :=
+  fun i j ↦
+  ∃ p : Fin n × Fin n, M p.1 p.2  ∧ p ∈ rectPtsetq n q i j--rectPtset n (q * i) (q * (i+1)) (q * j) (q * (j+1))
+  --(↑p.1,↑p.2) ∈ {(a,b) | (a ∈ Finset.Ico (q * i) (q * (i+1)))  ∧ (b ∈ Finset.Ico (q * j) (q * (j+1)))}
+  --↑p.1 ∈ Finset.Ico (q * i) (q * (i+1)) ∧ ↑p.2 ∈  Finset.Ico (q * j) (q * (j+1))
+  -- q * i ≤  ↑p.1 ∧ ↑p.1 < q * (i+1) ∧   q * j ≤ ↑p.2 ∧ ↑p.2 < q * (j+1)  --M p.1 p.2  ∧ ↑p.1 ∈ Finset.Icc (q*i) (q* (i+1)-1) ∧ ↑p.2 ∈ Finset.Icc (q *j) (q * (j+1)-1)
+                        --↑p.1 ≥ q * i ∧ ↑p.1 ≤ q * (i+1)-1 ∧   ↑p.2 ≥ q * j ∧ ↑p.2 ≤ q * (j+1)-1
+
+--def block_uncontract_all_one   {n : ℕ} (q : ℕ)  (M : Fin (n/q) → Fin (n/q) → Prop)  : Fin (n) → Fin (n) → Prop :=
+--  fun i j ↦
+--  ∃ p : Fin (n/q) × Fin (n/q),   M p.1 p.2  ∧ p.1 = (i : ℕ )/q ∧ p.2 = (j : ℕ )/q
+
+  -- ↑i  ∈ Finset.Icc (q * (p.1-1)+1) (q* p.1) ∧ ↑j ∈ Finset.Icc (q * (p.2-1)+1) (q * j)
+
+--def block_uncontract_all_one   {n : ℕ} (M : Fin n → Fin n → Prop) (q : ℕ)   : Fin (n*q) → Fin (n*q) → Prop :=
+--  fun i j ↦
+--  ∃ p : Fin n × Fin n,   M p.1 p.2  ∧ ↑p.1 ∈ Finset.Icc (q * (i-1)+1) (q* i) ∧ ↑p.2 ∈ Finset.Icc (q * (j-1)+1) (q * j)
+--
+
+open scoped Classical in noncomputable
+def blk_den {n q:ℕ } (M : Fin n → Fin n → Prop) (i j : Fin (n/q)):
+  ℕ :=  (rectPtsetqMatrix M q i j).card--(rectPtsetMatrix M (q * i) (q * (i+1)) (q * j) (q * (j+1))).card
+
+#check card_eq_sum_card_fiberwise
+#check le_mul_div_add_one
+
+@[simp] lemma p_to_pq{n:ℕ} {p : Fin n × Fin n} {q : ℕ} (hq: 0 < q):
+p ∈ rectPtset n (q * (↑p.1 / q)) (q * (↑p.1 / q + 1)) (q * (↑p.2 / q)) (q * (↑p.2 / q + 1)) := by
+  simp [rectPtset]
+  refine ⟨⟨?_1a, ?_1b⟩ ,⟨?_2a,?_2b⟩⟩
+  · exact Nat.mul_div_le (↑p.1) q
+  · exact le_mul_div_add_one p.1 hq
+  · exact Nat.mul_div_le (↑p.2) q
+  · exact le_mul_div_add_one p.2 hq
+
+open scoped Classical
+theorem den_eq_sum_blk_den {n:ℕ} (M : Fin n → Fin n → Prop) (q : ℕ ) (h_q_div_n: q ∣ n) (hq: 0 < q):
+let B := blkMatrix M q;
+density M = ∑ ⟨i,j⟩ : Fin (n/q) × Fin (n/q) with B i j, blk_den M i j := by
+  let B := blkMatrix M q
+  let Q := Fin (n/q) × Fin (n/q)
+  let N := Fin n × Fin n
+  let fq : Fin n → Fin (n/q) := fun x ↦  ⟨x/q, by apply Nat.div_lt_div_of_lt_of_dvd h_q_div_n; exact x.isLt ⟩
+  let s : Finset N := { (x,y)| M x y}
+  let f : N → Q  := fun (i,j) ↦ (fq i, fq j)
+  let t : Finset Q := {(i,j)| B i j}
+  have H : ∀ x ∈ s, f x ∈ t := by
+    intro p hp
+    simp only [mem_filter, Finset.mem_univ, true_and, s] at hp
+    simp only [mem_filter, Finset.mem_univ, true_and, t,B,blkMatrix]
+    use p
+    refine ⟨hp, by exact p_to_pq hq⟩
+  have h_sum_card:= Finset.card_eq_sum_card_fiberwise H
+  suffices claim: ∀ k, (filter (fun x ↦ f x = k) s).card = blk_den M k.1 k.2 by aesop
+  -- proof of the last claim
+  intro k
+  dsimp [blk_den,rectPtsetMatrix]
+  apply Finset.card_bij (fun (p:Fin n × Fin n)  _ ↦ p ) ?hi ?i_inj ?i_surj
+  · -- hi : ∀ (a : α) (ha : a ∈ s), i a ha ∈ t
+    intro p hp
+    simp only [mem_filter, Finset.mem_univ, true_and, s] at hp
+    simp only [rectPtsetqMatrix, rectPtsetq, Prod.mk.eta, mem_filter, Finset.mem_univ, true_and]
+    aesop
+  · -- i_inj
+    aesop
+  · -- i_surj : ∀ b ∈ t, ∃ a, ∃ (ha : a ∈ s), i a ha = b
+    intro p hp
+    simp only [Prod.mk.eta, mem_filter, Finset.mem_univ, true_and,rectPtsetqMatrix, rectPtsetq] at hp
+    simp only [mem_filter, Finset.mem_univ, true_and, exists_prop, exists_eq_right, s,fq]
+    refine ⟨hp.1, ?_⟩
+    replace hp := hp.2
+    simp [rectPtset] at hp
+    obtain ⟨⟨p1l,p1h⟩,p2l,p2h⟩ := hp
+    simp [f,fq]
+    refine Prod.ext ?i_surj.intro.intro.intro.fst ?i_surj.intro.intro.intro.snd
+    · -- proving k.1
+      simp
+      have:  ↑p.1 / q = k.1 := by apply Nat.div_eq_of_lt_le; rwa [mul_comm];rwa [mul_comm]
+      aesop
+    · -- proving k.2
+      simp
+      have:  ↑p.2 / q = k.2 := by apply Nat.div_eq_of_lt_le;rwa [mul_comm];rwa [mul_comm]
+      aesop
+  done
+
+theorem sum_blk_den_le_mul_den_blk {n:ℕ} (M : Fin n → Fin n → Prop) (q c: ℕ ) (h: ∀ i j : Fin (n/q), blk_den M i j ≤ c):
+let B := blkMatrix M q;
+∑ ⟨i,j⟩ : Fin (n/q) × Fin (n/q) with B i j, (blk_den M i j) ≤ c* density B := by
+  let  B := blkMatrix M q
+  let  Q := Fin (n/q) × Fin (n/q)
+  calc
+    ∑ ⟨i,j⟩ : Q with B i j, blk_den M i j ≤ ∑ ⟨i,j⟩ : Q with B i j, c := by apply Finset.sum_le_sum;intros p _; exact h p.1 p.2
+    _                                     = ({ (i,j) | B i j }: Finset Q).card*c := by exact sum_const_nat fun x ↦ congrFun rfl
+    _                                     = c* density B := by apply Nat.mul_comm
+  done
+
+  --∑ x ∈ filter (fun x ↦ blkMatrix M q x.1 x.2) Finset.univ, blk_den M x.1 x.2 ≤ ∑ x ∈ filter (fun x ↦ blkMatrix M q x.1 x.2) Finset.univ, c := by
+  -- _ = c* density (blkMatrix M q)  := by sorry
+
+
+
+
+
+/-- classical
+  let s : Finset (Fin n × Fin n) := { (x,y)| M x y}
+  let f : Fin n × Fin n → Fin n  := fun x ↦ x.1
+  let t : Finset (Fin n) := Finset.univ
+  have H : ∀ x ∈ s, f x ∈ t := by
+    intro x _
+    simp [f,t]
+  have h_sum_card:= Finset.card_eq_sum_card_fiberwise H
+  simp [f,t] at h_sum_card
+  observe: s.card = density M
+  rw [this] at h_sum_card
+  have: ∀ k, (filter (fun x ↦ f x = k) s).card = row_density M k := ?proof_fiber_row_density
+  simp only [this] at h_sum_card
+  exact h_sum_card
+
+  case proof_fiber_row_density =>
+    intro k
+    simp [row_density]
+    apply Finset.card_bij (fun (a:Fin n × Fin n)  _ ↦ a.2 ) ?hi ?i_inj ?i_surj; aesop;aesop;aesop--/
+
+
 --open Classical
 -- Bij = sq submatrix of M i' j' where i' ∈ [q * (i-1)+1, q* i], j' ∈ [q * (j-1)+1, q * j]
 def block_contract   {n : ℕ} (M : Fin n → Fin n → Prop)  (q : ℕ ) : Fin (n/q) → Fin (n/q) → Prop :=
@@ -1256,4 +1449,12 @@ lemma av_perm_contract_av_perm  {n k : ℕ} (q : ℕ)  (σ : Perm (Fin k)) (M : 
   contradiction
   done
 
-theorem ex_permutation {k : ℕ } (σ : Perm (Fin k))  (n : ℕ)  : ex (permPattern σ) n  ≤ n*k := sorry
+-- sum super column
+--
+-- den_leq_den_of_submatrix
+--lemma le_mul_div_add_ones {n q p:ℕ}  (h: 0 < q): p < q * (p / q + 1) := by
+--   linarith
+
+theorem ex_permutation {k : ℕ } (σ : Perm (Fin k))  (n : ℕ) [NeZero n] [NeZero k] (h_k_div_n: k*k ∣ n) : ex (permPattern σ) n  ≤ n*k := by sorry
+
+--theorem ex_permutation {k : ℕ } (σ : Perm (Fin k))  (n : ℕ)  : ex (permPattern σ) n  ≤ n*k := sorry
