@@ -34,6 +34,10 @@ namespace Finset
 variable {ι α : Type*} [CanonicallyLinearOrderedAddCommMonoid α] {s : Finset ι} {f : ι → α}
 
 @[simp] lemma sup_eq_zero : s.sup f = 0 ↔ ∀ i ∈ s, f i = 0 := by simp [← bot_eq_zero']
+@[simp] lemma non_zero (n :ℕ )[NeZero n] : 0 < n := by
+  cases n
+  simp_all [lt_self_iff_false]
+  omega
 
 end Finset
 
@@ -1259,9 +1263,10 @@ def blk_den {n q:ℕ } (M : Fin n → Fin n → Prop) (i j : Fin (n/q)):
 #check card_eq_sum_card_fiberwise
 #check le_mul_div_add_one
 
-@[simp] lemma p_to_pq{n:ℕ} {p : Fin n × Fin n} {q : ℕ} (hq: 0 < q):
+@[simp] lemma p_to_pq{n:ℕ} {p : Fin n × Fin n} {q : ℕ} [NeZero q]:
 p ∈ rectPtset n (q * (↑p.1 / q)) (q * (↑p.1 / q + 1)) (q * (↑p.2 / q)) (q * (↑p.2 / q + 1)) := by
-  simp [rectPtset]
+  simp only [rectPtset, Finset.mem_Ico, mem_product, mem_filter, Finset.mem_univ, true_and]
+  have hq: 0 < q := by simp only [non_zero]
   refine ⟨⟨?_1a, ?_1b⟩ ,⟨?_2a,?_2b⟩⟩
   · exact Nat.mul_div_le (↑p.1) q
   · exact le_mul_div_add_one p.1 hq
@@ -1269,7 +1274,7 @@ p ∈ rectPtset n (q * (↑p.1 / q)) (q * (↑p.1 / q + 1)) (q * (↑p.2 / q)) (
   · exact le_mul_div_add_one p.2 hq
 
 open scoped Classical
-theorem den_eq_sum_blk_den {n:ℕ} (M : Fin n → Fin n → Prop) (q : ℕ ) (h_q_div_n: q ∣ n) (hq: 0 < q):
+theorem den_eq_sum_blk_den {n:ℕ} (M : Fin n → Fin n → Prop) (q : ℕ ) [NeZero q] (h_q_div_n: q ∣ n) :
 let B := blkMatrix M q;
 density M = ∑ ⟨i,j⟩ : Fin (n/q) × Fin (n/q) with B i j, blk_den M i j := by
   let B := blkMatrix M q
@@ -1284,7 +1289,7 @@ density M = ∑ ⟨i,j⟩ : Fin (n/q) × Fin (n/q) with B i j, blk_den M i j := 
     simp only [mem_filter, Finset.mem_univ, true_and, s] at hp
     simp only [mem_filter, Finset.mem_univ, true_and, t,B,blkMatrix]
     use p
-    refine ⟨hp, by exact p_to_pq hq⟩
+    refine ⟨hp, p_to_pq⟩
   have h_sum_card:= Finset.card_eq_sum_card_fiberwise H
   suffices claim: ∀ k, (filter (fun x ↦ f x = k) s).card = blk_den M k.1 k.2 by aesop
   -- proof of the last claim
@@ -1318,22 +1323,19 @@ density M = ∑ ⟨i,j⟩ : Fin (n/q) × Fin (n/q) with B i j, blk_den M i j := 
       aesop
   done
 
-theorem sum_blk_den_le_mul_den_blk {n:ℕ} (M : Fin n → Fin n → Prop) (q c: ℕ ) (h: ∀ i j : Fin (n/q), blk_den M i j ≤ c):
-let B := blkMatrix M q;
+theorem sum_blk_den_le_mul_den_blk {n q c:ℕ} (M : Fin n → Fin n → Prop) (B : Fin (n/q) → Fin (n/q) → Prop) (h: ∀ i j : Fin (n/q), B i j → blk_den M i j ≤ c):
+--let B := blkMatrix M q;
 ∑ ⟨i,j⟩ : Fin (n/q) × Fin (n/q) with B i j, (blk_den M i j) ≤ c* density B := by
-  let  B := blkMatrix M q
+--  let  B := blkMatrix M q
   let  Q := Fin (n/q) × Fin (n/q)
   calc
-    ∑ ⟨i,j⟩ : Q with B i j, blk_den M i j ≤ ∑ ⟨i,j⟩ : Q with B i j, c := by apply Finset.sum_le_sum;intros p _; exact h p.1 p.2
+    ∑ ⟨i,j⟩ : Q with B i j, blk_den M i j ≤ ∑ ⟨i,j⟩ : Q with B i j, c := by apply Finset.sum_le_sum;intros p hp; aesop
     _                                     = ({ (i,j) | B i j }: Finset Q).card*c := by exact sum_const_nat fun x ↦ congrFun rfl
     _                                     = c* density B := by apply Nat.mul_comm
   done
 
   --∑ x ∈ filter (fun x ↦ blkMatrix M q x.1 x.2) Finset.univ, blk_den M x.1 x.2 ≤ ∑ x ∈ filter (fun x ↦ blkMatrix M q x.1 x.2) Finset.univ, c := by
   -- _ = c* density (blkMatrix M q)  := by sorry
-
-
-
 
 
 /-- classical
@@ -1454,7 +1456,101 @@ lemma av_perm_contract_av_perm  {n k : ℕ} (q : ℕ)  (σ : Perm (Fin k)) (M : 
 -- den_leq_den_of_submatrix
 --lemma le_mul_div_add_ones {n q p:ℕ}  (h: 0 < q): p < q * (p / q + 1) := by
 --   linarith
+#check rectPtsetqMatrix
+#check den_eq_sum_blk_den
+--let B := blkMatrix M q;
+--density M = ∑ ⟨i,j⟩ : Fin (n/q) × Fin (n/q) with B i j, blk_den M i j
 
-theorem ex_permutation {k : ℕ } (σ : Perm (Fin k))  (n : ℕ) [NeZero n] [NeZero k] (h_k_div_n: k*k ∣ n) : ex (permPattern σ) n  ≤ n*k := by sorry
+#check sum_blk_den_le_mul_den_blk
+--theorem sum_blk_den_le_mul_den_blk {n q: ℕ} (M : Fin n → Fin n → Prop) (B: Fin (n/q) → Fin (n/q) → Prop) (c: ℕ )
+--(h: ∀ i j : Fin (n/q), blk_den M i j ≤ c) : ∑ ⟨i,j⟩ : Fin (n/q) × Fin (n/q) with B i j, (blk_den M i j) ≤ c* density B := sorry
+
+#check  sum_blk_den_le_mul_den_blk
+--∑ ⟨i,j⟩ : Fin (n/q) × Fin (n/q) with B i j, (blk_den M i j) ≤ c* density B
+
+theorem split_density_blk {n q: ℕ} (M : Fin n → Fin n → Prop)  (f1 f2: Fin (n/q) → Fin (n/q) → Prop) :
+  --let M' := {(a,b) : Fin n × Fin n |  M a b ∧  (a,b) ∈  rectPtsetq n q i j}
+  let Q := Fin (n/q) × Fin (n/q)
+  let f3 := fun i j ↦ (¬ f1 i j) ∧ ¬ (f2 i j)
+  let B := blkMatrix M q
+  let B1 (i j : Fin (n/q)) : Prop :=  B i j ∧ f1 i j
+  let B2 (i j : Fin (n/q)) : Prop :=  B i j ∧ f2 i j
+  let N  (i j : Fin (n/q)) : Prop :=  B i j ∧ f3 i j
+
+  density M ≤ ∑ ⟨i,j⟩ : Q with B1 i j , blk_den M i j +
+              ∑ ⟨i,j⟩ : Q with B2 i j , blk_den M i j +
+              ∑ ⟨i,j⟩ : Q with N  i j , blk_den M i j
+              := sorry
+
+--theorem split_density {n : ℕ} (M : Fin n → Fin n → Prop) (Pred: Fin n → Fin n → Prop) :
+--let M1 (i j : Fin n) : Prop := M i j ∧   (Pred i j);
+--let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (Pred i j);
+--density M = density M1 + density M2 := by
+
+example {k : ℕ }  [NeZero k] (σ : Perm (Fin k))  (n : ℕ) [NeZero n] (h_k_div_n: k*k ∣ n) : ex (permPattern σ) n  ≤ n*k := by
+  simp only [ex, Finset.sup_le_iff, mem_filter, Finset.mem_univ, true_and]
+  intros M M_avoid_perm
+  let q : ℕ := k*k
+  let B := blkMatrix M q
+  let Q := Fin (n/q) × Fin (n/q)
+
+  have recurrence :  ex (permPattern σ) n ≤ (k-1)*(k-1) * ex (permPattern σ) (n/(k*k)) + 2*n * k*k := by
+    let W : Fin (n/q) → Fin (n/q) → Prop := fun i j ↦ ({ c | ∃ r, (r,c) ∈ rectPtsetqMatrix M q i j}: Finset (Fin n)).card ≥ k
+    let T : Fin (n/q) → Fin (n/q) → Prop := fun i j ↦ ({ r | ∃ c, (r,c) ∈ rectPtsetqMatrix M q i j}: Finset (Fin n)).card ≥ k
+    let S : Fin (n/q) → Fin (n/q) → Prop := fun i j ↦ ¬ W i j ∧ ¬ T i j
+
+    let WB : Fin (n/q) → Fin (n/q) → Prop := fun i j ↦ W i j ∧ B i j
+    let TB : Fin (n/q) → Fin (n/q) → Prop := fun i j ↦ T i j ∧ B i j
+    let SB : Fin (n/q) → Fin (n/q) → Prop := fun i j ↦ S i j ∧ B i j
+
+    have sum_small_blks: ∑ ⟨i,j⟩ : Q with SB i j, blk_den M i j ≤ (k-1)*(k-1) * ex (permPattern σ) (n/(k*k)) := by
+      have h1: ∀ (i j : Fin (n / q)), SB i j → blk_den M i j ≤ (k-1)*(k-1) := sorry
+      have h2: density SB ≤ ex (permPattern σ) (n/q)  := sorry
+      calc
+        ∑ ⟨i,j⟩ : Q with SB i j, blk_den M i j ≤ (k-1)*(k-1) * density SB := by convert sum_blk_den_le_mul_den_blk M SB h1
+        _                                      ≤ (k-1)*(k-1) * ex (permPattern σ) (n/q) := Nat.mul_le_mul_left ((k - 1) * (k - 1)) h2
+
+    have sum_wide_blocks: ∑ ⟨i,j⟩ : Q with WB i j, blk_den M i j ≤ n * k*k := by
+      have h1: ∀ (i j : Fin (n / q)), WB i j → blk_den M i j ≤ k*k := sorry
+      have h2: density WB ≤ n  := sorry
+      calc
+        ∑ ⟨i,j⟩ : Q with WB i j, blk_den M i j ≤ k*k * density WB := by convert sum_blk_den_le_mul_den_blk M WB h1
+        _                                      ≤ n *k *k  := sorry
+
+    have sum_tall_blocks: ∑ ⟨i,j⟩ : Q with TB i j, blk_den M i j ≤ n * k*k := sorry
+
+    calc
+      ex (permPattern σ) n  = density M := sorry
+      _                     ≤ ∑ ⟨i,j⟩ : Q with WB i j, blk_den M i j +
+                              ∑ ⟨i,j⟩ : Q with TB i j, blk_den M i j +
+                              ∑ ⟨i,j⟩ : Q with SB i j, blk_den M i j := ?convert_split_density_blk
+      _                     ≤ ∑ ⟨i,j⟩ : Q with WB i j, blk_den M i j +
+                              ∑ ⟨i,j⟩ : Q with TB i j, blk_den M i j +
+                              (k-1)*(k-1) * ex (permPattern σ) (n/(k*k)) := Nat.add_le_add_left sum_small_blks (∑ ⟨i,j⟩ : Q with WB i j, blk_den M i j +  ∑ ⟨i,j⟩ : Q with TB i j, blk_den M i j)
+      _                     ≤ n * k*k + n * k*k + (k-1)*(k-1) * ex (permPattern σ) (n/(k*k)) := by simp only [add_le_add_iff_right]; exact Nat.add_le_add sum_wide_blocks sum_tall_blocks
+      _                     = (k-1)*(k-1) * ex (permPattern σ) (n/q) + 2*n * k*k  := by ring
+
+    case convert_split_density_blk =>
+      convert split_density_blk M W T <;> all_goals (
+      · rename_i x
+        simp_all only [ge_iff_le, not_le, Q, q, SB, S, W, T, B, WB, TB]
+        obtain ⟨fst, snd⟩ := x
+        simp_all only
+        apply Iff.intro
+        · intro a
+          simp_all only [and_self]
+        · intro a
+          simp_all only [and_self]
+      )
+    done
+
+  sorry
+
+
+
+
+
+
+--theorem ex_permutation {k : ℕ } (σ : Perm (Fin k))  (n : ℕ) [NeZero n] [NeZero k] (h_k_div_n: k*k ∣ n) : ex (permPattern σ) n  ≤ n*k := by sorry
 
 --theorem ex_permutation {k : ℕ } (σ : Perm (Fin k))  (n : ℕ)  : ex (permPattern σ) n  ≤ n*k := sorry
