@@ -1183,11 +1183,20 @@ lemma le_mul_div_add_one {n q :ℕ} (p : Fin n) (h: 0 < q): p < q * (p / q + 1) 
 def rectPtset (n a₁ b₁ a₂ b₂: ℕ) : Finset (Fin n × Fin n) :=
   ({ a | ↑a ∈ Finset.Ico a₁ b₁} : Finset (Fin n)) ×ˢ ({ a | ↑a ∈ Finset.Ico a₂ b₂} : Finset (Fin n)) -- {(a,b) | (↑a ∈ Finset.Ico a₁ b₁) ∧ (↑b ∈ Finset.Ico a₂ b₂)}
 
+def rectPtsetSubset  {n : ℕ} (R C : Finset (Fin n)) : Finset (Fin n × Fin n) := R ×ˢ C
+--  ({ a | ↑a ∈ Finset.Ico a₁ b₁} : Finset (Fin n)) ×ˢ ({ a | ↑a ∈ Finset.Ico a₂ b₂} : Finset (Fin n)) -- {(a,b) | (↑a ∈ Finset.Ico a₁ b₁) ∧ (↑b ∈ Finset.Ico a₂ b₂)}
+
+
 --def rectPtsetSubset (n a₁ b₁ a₂ b₂: ℕ) (R C : Finset (Fin n)): Finset (Fin n × Fin n) :=
 --  ({ a | a ∈ R ∧ ↑a ∈ Finset.Ico a₁ b₁} : Finset (Fin n)) ×ˢ ({ a | a ∈ C ∧ ↑a ∈ Finset.Ico a₂ b₂} : Finset (Fin n)) -- {(a,b) | (↑a ∈ Finset.Ico a₁ b₁) ∧ (↑b ∈ Finset.Ico a₂ b₂)}
 open scoped Classical in noncomputable
 def rectPtsetMatrix {n :ℕ }(M : Fin n → Fin n → Prop) (a₁ b₁ a₂ b₂: ℕ)  : Finset (Fin n × Fin n) :=
   {(a,b) | M a b ∧  (a,b) ∈ (rectPtset n a₁ b₁ a₂ b₂)}
+
+open scoped Classical in noncomputable
+def rectPtsetSubsetMatrix {n :ℕ }(M : Fin n → Fin n → Prop)  (R C : Finset (Fin n))  : Finset (Fin n × Fin n) :=
+  {(a,b) | M a b ∧  (a,b) ∈ rectPtsetSubset R C}
+
 
 -- lemma card_rectPtSetSubset {n : ℕ} (R C : Finset (Fin n)) (h: b₁ ≤ n ∧ b₂ ≤ n): (rectPtsetSubset n a₁ b₁ a₂ b₂ R C).card =  R.card * C.card := by sorry
 def rectPtsetq (n q i j :ℕ) := rectPtset n (q * i) (q * (i+1)) (q * j) (q * (j+1)) --Finset (Fin n × Fin n) := ({ a | ↑a ∈ Finset.Ico (q * i) (q * (i+1))} : Finset (Fin n)) ×ˢ ({ a | ↑a ∈ Finset.Ico (q * j) (q * (j+1))} : Finset (Fin n))-- {(a,b) | (↑a ∈ Finset.Ico a₁ b₁) ∧ (↑b ∈ Finset.Ico a₂ b₂)}
@@ -1206,6 +1215,19 @@ lemma card_rectPtSet (n a₁ b₁ a₂ b₂: ℕ) (h: b₁ ≤ n ∧ b₂ ≤ n)
     have: b < n := by omega
     use ⟨b,this⟩
     simp_all only [Finset.mem_Ico, mem_filter, Finset.mem_univ, and_self, exists_const]
+
+--    ({ c | ∃ r, (r,c) ∈ rectPtsetqMatrix M q i j}: Finset (Fin n))
+lemma card_rectPtSetSubset {n : ℕ} (R C : Finset (Fin n)) : (rectPtsetSubset R C).card =  R.card*C.card := by simp only [rectPtsetSubset, card_product]
+
+lemma card_rectPtsetSubsetMatrix  {n :ℕ }(M : Fin n → Fin n → Prop) (R C : Finset (Fin n)) : (rectPtsetSubsetMatrix M R C).card ≤ R.card * C.card := by
+  suffices claim: (rectPtsetSubsetMatrix M R C).card ≤  (rectPtsetSubset R C).card by calc
+    (rectPtsetSubsetMatrix M R C).card ≤ (rectPtsetSubset R C).card := claim
+    _                               =   R.card*C.card := card_rectPtSetSubset R C
+  refine Finset.card_le_card ?_
+  simp only [rectPtsetSubsetMatrix, rectPtsetSubset, Prod.mk.eta, mem_product]
+  intro a ha
+  aesop
+
 
 lemma card_rectPtsetq (n q i j : ℕ) (hq: q ∣ n) (h: i < n/q ∧ j < n/q) : (rectPtsetq n q i j).card =  q*q := by
   simp [rectPtsetq]
@@ -1359,19 +1381,12 @@ theorem sum_blk_den_le_mul_den_blk {n q c:ℕ} (M : Fin n → Fin n → Prop) (B
     apply Finset.card_bij (fun (a:Fin n × Fin n)  _ ↦ a.2 ) ?hi ?i_inj ?i_surj; aesop;aesop;aesop--/
 
 
---open Classical
--- Bij = sq submatrix of M i' j' where i' ∈ [q * (i-1)+1, q* i], j' ∈ [q * (j-1)+1, q * j]
-def block_contract   {n : ℕ} (M : Fin n → Fin n → Prop)  (q : ℕ ) : Fin (n/q) → Fin (n/q) → Prop :=
-  fun i j ↦
-  ∃ p : Fin n × Fin n,   M p.1 p.2  ∧ ↑p.1 ∈ Finset.Icc (q * (i-1)+1) (q* i) ∧ ↑p.2 ∈ Finset.Icc (q * (j-1)+1) (q * j)
---
-lemma av_perm_contract_av_perm  {n k : ℕ} (q : ℕ)  (σ : Perm (Fin k)) (M : Fin n → Fin n → Prop)
-      (hM: ¬ contains (permPattern σ) M) : ¬ contains (permPattern σ) (block_contract M q)  := by
---  classical
+lemma av_perm_contract_av_perm {n k: ℕ} (q :ℕ) (σ : Perm (Fin k)) (M : Fin n → Fin n → Prop)
+      (hM: ¬ contains (permPattern σ) M) : ¬ contains (permPattern σ) (blkMatrix M q)  := by
   by_contra H
   simp [contains] at H
   obtain ⟨f,hf,g,hg, h⟩ := H
-  simp only [block_contract, Finset.mem_Icc] at h
+  simp only [blkMatrix, Finset.mem_Icc] at h
   simp only [permPattern, PEquiv.toMatrix_apply, toPEquiv, PEquiv.coe_mk, Function.comp_apply,
     Option.mem_def, Option.some.injEq, ite_eq_left_iff, zero_ne_one, imp_false, Decidable.not_not,
      forall_eq'] at h
@@ -1382,7 +1397,8 @@ lemma av_perm_contract_av_perm  {n k : ℕ} (q : ℕ)  (σ : Perm (Fin k)) (M : 
   -- f i         1
   --  .
   --  .
-
+  --#check (h ).choose
+  simp only [rectPtsetq, rectPtset, Finset.mem_Ico, mem_product, mem_filter, Finset.mem_univ, true_and] at h
   let f' :Fin k → Fin n:= fun i ↦ (h i).choose.1
 
   have f'_mono: StrictMono f' := by
@@ -1391,18 +1407,18 @@ lemma av_perm_contract_av_perm  {n k : ℕ} (q : ℕ)  (σ : Perm (Fin k)) (M : 
     intro a b hab
     have spec_a:= (h a).choose_spec
     have spec_b:= (h b).choose_spec
-    have ca_ub:= spec_a.2.1.2
-    have cb_lb:= spec_b.2.1.1
+    obtain ⟨A,⟨B,ca_ub⟩,C,D⟩ := spec_a
+    obtain ⟨E,⟨cb_lb,F⟩,G,H⟩ := spec_b
     cases q
     · simp_all
     ·
       rename_i q
       simp_all
       calc
-        f' a ≤ (q + 1) * ↑(f a) := ca_ub
-        _   < (q + 1) * (↑(f b) - 1) + 1 := by
+        f' a <   (q + 1) * (↑(f a) + 1) := ca_ub
+        _   ≤ (q + 1) * ↑(f b) := by
             simp_arith
-            exact Nat.le_sub_one_of_lt (hf hab)
+            exact hf hab
         _   ≤ f' b := cb_lb
 
   --            . .  g (i) . .   |     . . g (σ i) . .
@@ -1420,19 +1436,20 @@ lemma av_perm_contract_av_perm  {n k : ℕ} (q : ℕ)  (σ : Perm (Fin k)) (M : 
     intro a b hab
     have spec_a:=  (h (σ.invFun a)).choose_spec
     have spec_b:=  (h (σ.invFun b)).choose_spec
-    simp_all
-    have ca_ub := spec_a.2.2.2
-    have cb_lb := spec_b.2.2.1
 
+    obtain ⟨A,B,C,ca_ub⟩ := spec_a
+    obtain ⟨D,E,cb_lb,F⟩ := spec_b
+
+    simp_all
     cases q
     · simp_all
     ·
       rename_i q
       calc
-        g' a ≤ (q + 1) * ↑(g a) := by simp_all [g']
-        _   < (q + 1) * (↑(g b) - 1) + 1 := by
+        g' a  <  (q + 1) * (↑(g a) + 1)  := by simp_all [g']
+        _   ≤ (q + 1) * (↑(g b) )  := by
             simp_arith
-            exact Nat.le_sub_one_of_lt (hg hab)
+            exact hg hab
         _   ≤ g' b := by simp_all [g']
 
   have: contains (permPattern σ) M := by
@@ -1487,6 +1504,8 @@ theorem split_density_blk {n q: ℕ} (M : Fin n → Fin n → Prop)  (f1 f2: Fin
 --let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (Pred i j);
 --density M = density M1 + density M2 := by
 
+-- huskel-like operator |>
+
 example {k : ℕ }  [NeZero k] (σ : Perm (Fin k))  (n : ℕ) [NeZero n] (h_k_div_n: k*k ∣ n) : ex (permPattern σ) n  ≤ n*k := by
   simp only [ex, Finset.sup_le_iff, mem_filter, Finset.mem_univ, true_and]
   intros M M_avoid_perm
@@ -1504,8 +1523,40 @@ example {k : ℕ }  [NeZero k] (σ : Perm (Fin k))  (n : ℕ) [NeZero n] (h_k_di
     let SB : Fin (n/q) → Fin (n/q) → Prop := fun i j ↦ S i j ∧ B i j
 
     have sum_small_blks: ∑ ⟨i,j⟩ : Q with SB i j, blk_den M i j ≤ (k-1)*(k-1) * ex (permPattern σ) (n/(k*k)) := by
-      have h1: ∀ (i j : Fin (n / q)), SB i j → blk_den M i j ≤ (k-1)*(k-1) := sorry
-      have h2: density SB ≤ ex (permPattern σ) (n/q)  := sorry
+      have h1: ∀ (i j : Fin (n / q)), SB i j → blk_den M i j ≤ (k-1)*(k-1) := by
+        intro i j hij
+        simp [blk_den]
+        simp [SB,S,W,T,B, blkMatrix]   at hij
+        obtain ⟨⟨num_cols,num_rows⟩,_⟩ := hij
+        let R := (filter (fun r ↦ ∃ c, (r, c) ∈ rectPtsetqMatrix M q ↑i ↑j) Finset.univ)
+        let C := (filter (fun c ↦ ∃ r, (r, c) ∈ rectPtsetqMatrix M q ↑i ↑j) Finset.univ)
+        have rc: R.card ≤ k - 1 := Nat.le_sub_one_of_lt num_rows
+        have cc: C.card ≤ k - 1 := Nat.le_sub_one_of_lt num_cols
+        have: (rectPtsetSubsetMatrix M R C) = rectPtsetqMatrix M q ↑i ↑j := by
+          ext x
+          simp only [rectPtsetSubsetMatrix, rectPtsetSubset, Prod.mk.eta, mem_product, mem_filter,
+            Finset.mem_univ, true_and, rectPtsetqMatrix, rectPtsetq, rectPtset, Finset.mem_Ico,
+            and_congr_right_iff]
+          intro hx
+          simp only [rectPtsetqMatrix, rectPtsetq, rectPtset, Finset.mem_Ico, Prod.mk.eta,
+            mem_product, mem_filter, Finset.mem_univ, true_and, R, C]
+          aesop
+        rw [← this]
+        calc
+          (rectPtsetSubsetMatrix M R C).card  ≤ R.card * C.card := card_rectPtsetSubsetMatrix M R C
+          _                                   ≤ (k - 1) * (k - 1) := Nat.mul_le_mul rc cc
+
+      have h2: density SB ≤ ex (permPattern σ) (n/q)  := by
+        suffices ¬ contains (permPattern σ) SB from avoid_le_ex SB this
+        have B_av_perm := av_perm_contract_av_perm q σ M M_avoid_perm
+        by_contra!
+        simp only [contains, SB] at this
+        obtain ⟨f,hf,g,hg,_⟩ := this
+        have : contains (permPattern σ) (blkMatrix M q):= by
+          simp only [contains]
+          refine ⟨f,hf,g,hg, by aesop⟩
+        contradiction
+
       calc
         ∑ ⟨i,j⟩ : Q with SB i j, blk_den M i j ≤ (k-1)*(k-1) * density SB := by convert sum_blk_den_le_mul_den_blk M SB h1
         _                                      ≤ (k-1)*(k-1) * ex (permPattern σ) (n/q) := Nat.mul_le_mul_left ((k - 1) * (k - 1)) h2
@@ -1545,9 +1596,6 @@ example {k : ℕ }  [NeZero k] (σ : Perm (Fin k))  (n : ℕ) [NeZero n] (h_k_di
     done
 
   sorry
-
-
-
 
 
 
