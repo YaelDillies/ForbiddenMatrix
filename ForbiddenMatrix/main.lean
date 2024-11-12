@@ -1506,9 +1506,27 @@ theorem split_density_blk {n q: ℕ} (M : Fin n → Fin n → Prop)  (f1 f2: Fin
 
 -- huskel-like operator |>
 
+lemma density_WB {n k : ℕ}(M : Fin n → Fin n → Prop) {σ : Perm (Fin k)} (M_avoid_perm: ¬ contains (permPattern σ) M) (q :ℕ):
+let B := blkMatrix M q
+let W : Fin (n/q) → Fin (n/q) → Prop := fun i j ↦ ({ c | ∃ r, (r,c) ∈ rectPtsetqMatrix M q i j}: Finset (Fin n)).card ≥ k
+let WB : Fin (n/q) → Fin (n/q) → Prop := fun i j ↦ W i j ∧ B i j
+density WB ≤ n := sorry
+
+lemma density_TB {n k : ℕ}(M : Fin n → Fin n → Prop) {σ : Perm (Fin k)} (M_avoid_perm: ¬ contains (permPattern σ) M) (q :ℕ):
+let B := blkMatrix M q
+let T : Fin (n/q) → Fin (n/q) → Prop := fun i j ↦ ({ r | ∃ c, (r,c) ∈ rectPtsetqMatrix M q i j}: Finset (Fin n)).card ≥ k
+let TB : Fin (n/q) → Fin (n/q) → Prop := fun i j ↦ T i j ∧ B i j
+density TB ≤ n := sorry
+
+
+--set_option diagnostics true
+--set_option trace.aesop.proof true
 example {k : ℕ }  [NeZero k] (σ : Perm (Fin k))  (n : ℕ) [NeZero n] (h_k_div_n: k*k ∣ n) : ex (permPattern σ) n  ≤ n*k := by
   simp only [ex, Finset.sup_le_iff, mem_filter, Finset.mem_univ, true_and]
-  intros M M_avoid_perm
+
+  have maxM : ∃ M : Fin n → Fin n → Prop, ¬ contains (permPattern σ) M ∧ ex (permPattern σ) n =  density M  := sorry
+  let M := maxM.choose
+  obtain ⟨M_avoid_perm, M_maximizer⟩ := maxM.choose_spec
   let q : ℕ := k*k
   let B := blkMatrix M q
   let Q := Fin (n/q) × Fin (n/q)
@@ -1521,6 +1539,7 @@ example {k : ℕ }  [NeZero k] (σ : Perm (Fin k))  (n : ℕ) [NeZero n] (h_k_di
     let WB : Fin (n/q) → Fin (n/q) → Prop := fun i j ↦ W i j ∧ B i j
     let TB : Fin (n/q) → Fin (n/q) → Prop := fun i j ↦ T i j ∧ B i j
     let SB : Fin (n/q) → Fin (n/q) → Prop := fun i j ↦ S i j ∧ B i j
+    let fk := k^4
 
     have sum_small_blks: ∑ ⟨i,j⟩ : Q with SB i j, blk_den M i j ≤ (k-1)*(k-1) * ex (permPattern σ) (n/(k*k)) := by
       have h1: ∀ (i j : Fin (n / q)), SB i j → blk_den M i j ≤ (k-1)*(k-1) := by
@@ -1532,69 +1551,116 @@ example {k : ℕ }  [NeZero k] (σ : Perm (Fin k))  (n : ℕ) [NeZero n] (h_k_di
         let C := (filter (fun c ↦ ∃ r, (r, c) ∈ rectPtsetqMatrix M q ↑i ↑j) Finset.univ)
         have rc: R.card ≤ k - 1 := Nat.le_sub_one_of_lt num_rows
         have cc: C.card ≤ k - 1 := Nat.le_sub_one_of_lt num_cols
-        have: (rectPtsetSubsetMatrix M R C) = rectPtsetqMatrix M q ↑i ↑j := by
-          ext x
+        suffices (rectPtsetSubsetMatrix M R C) = rectPtsetqMatrix M q ↑i ↑j by
+          rw [← this]
+          calc
+            (rectPtsetSubsetMatrix M R C).card  ≤ R.card * C.card := card_rectPtsetSubsetMatrix M R C
+            _                                   ≤ (k - 1) * (k - 1) := Nat.mul_le_mul rc cc
+        show (rectPtsetSubsetMatrix M R C) = rectPtsetqMatrix M q ↑i ↑j
+        · ext x
           simp only [rectPtsetSubsetMatrix, rectPtsetSubset, Prod.mk.eta, mem_product, mem_filter,
             Finset.mem_univ, true_and, rectPtsetqMatrix, rectPtsetq, rectPtset, Finset.mem_Ico,
             and_congr_right_iff]
           intro hx
           simp only [rectPtsetqMatrix, rectPtsetq, rectPtset, Finset.mem_Ico, Prod.mk.eta,
             mem_product, mem_filter, Finset.mem_univ, true_and, R, C]
-          aesop
-        rw [← this]
-        calc
-          (rectPtsetSubsetMatrix M R C).card  ≤ R.card * C.card := card_rectPtsetSubsetMatrix M R C
-          _                                   ≤ (k - 1) * (k - 1) := Nat.mul_le_mul rc cc
+          -- aesop below
+          rename_i right
+          simp_all only [- M_avoid_perm, q, R, C]
+          obtain ⟨w, h⟩ := maxM
+          obtain ⟨fst, snd⟩ := x
+          obtain ⟨w_1, h_1⟩ := right
+          obtain ⟨left, right⟩ := h
+          obtain ⟨w_2, h⟩ := h_1
+          obtain ⟨left_1, right_1⟩ := h
+          simp_all only [- M_avoid_perm]
+          apply Iff.intro
+          · intro a
+            obtain ⟨left_2, right_2⟩ := a
+            obtain ⟨w_3, h⟩ := left_2
+            obtain ⟨w_4, h_1⟩ := right_2
+            obtain ⟨left_2, right_2⟩ := h
+            obtain ⟨left_3, right_3⟩ := h_1
+            obtain ⟨left_4, right_2⟩ := right_2
+            obtain ⟨left_5, right_3⟩ := right_3
+            obtain ⟨left_4, right_4⟩ := left_4
+            obtain ⟨left_6, right_2⟩ := right_2
+            obtain ⟨left_5, right_5⟩ := left_5
+            obtain ⟨left_7, right_3⟩ := right_3
+            simp_all only [- M_avoid_perm,and_self]
+          · intro a
+            simp_all only [- M_avoid_perm, and_self, true_and, and_true]
+            obtain ⟨left_2, right_2⟩ := a
+            obtain ⟨left_2, right_3⟩ := left_2
+            obtain ⟨left_3, right_2⟩ := right_2
+            apply And.intro
+            · apply Exists.intro
+              · apply And.intro
+                on_goal 2 => apply And.intro
+                on_goal 3 => {exact right_2
+                }
+                · simp_all only [- M_avoid_perm]
+                · simp_all only [- M_avoid_perm]
+            · apply Exists.intro
+              · apply And.intro
+                on_goal 2 => apply And.intro
+                on_goal 3 => {exact right_3
+                }
+                · simp_all only [- M_avoid_perm]
+                · simp_all only [- M_avoid_perm]
 
       have h2: density SB ≤ ex (permPattern σ) (n/q)  := by
         suffices ¬ contains (permPattern σ) SB from avoid_le_ex SB this
-        have B_av_perm := av_perm_contract_av_perm q σ M M_avoid_perm
-        by_contra!
-        simp only [contains, SB] at this
-        obtain ⟨f,hf,g,hg,_⟩ := this
-        have : contains (permPattern σ) (blkMatrix M q):= by
-          simp only [contains]
-          refine ⟨f,hf,g,hg, by aesop⟩
-        contradiction
+        show ¬ contains (permPattern σ) SB
+        · by_contra!
+          simp only [contains, SB] at this
+          obtain ⟨f,hf,g,hg,H⟩ := this
+          -- H: ∀ (a b : Fin k), permPattern σ a b → S (f a) (g b) ∧ B (f a) (g b)
+          have: contains (permPattern σ) (blkMatrix M q):= by
+            simp only [contains]
+            refine ⟨f,hf,g,hg, by
+              show ∀ (a b : Fin k), permPattern σ a b → blkMatrix M q (f a) (g b)
+              · intros
+                simp_all only [- M_avoid_perm, ge_iff_le, not_le, and_imp, q, SB, S, W, T, B]
+            ⟩
+          have: ¬contains (permPattern σ) (blkMatrix M q) := av_perm_contract_av_perm M M_avoid_perm q
+          contradiction
 
       calc
         ∑ ⟨i,j⟩ : Q with SB i j, blk_den M i j ≤ (k-1)*(k-1) * density SB := by convert sum_blk_den_le_mul_den_blk M SB h1
         _                                      ≤ (k-1)*(k-1) * ex (permPattern σ) (n/q) := Nat.mul_le_mul_left ((k - 1) * (k - 1)) h2
 
-    have sum_wide_blocks: ∑ ⟨i,j⟩ : Q with WB i j, blk_den M i j ≤ n * k*k := by
-      have h1: ∀ (i j : Fin (n / q)), WB i j → blk_den M i j ≤ k*k := sorry
-      have h2: density WB ≤ n  := sorry
+    have sum_wide_blocks: ∑ ⟨i,j⟩ : Q with WB i j, blk_den M i j ≤ n * fk := by
+
+      have h1: ∀ (i j : Fin (n / q)), WB i j → blk_den M i j ≤ fk := sorry
+      have h2: density WB ≤ n  := density_WB M M_avoid_perm q
       calc
-        ∑ ⟨i,j⟩ : Q with WB i j, blk_den M i j ≤ k*k * density WB := by convert sum_blk_den_le_mul_den_blk M WB h1
-        _                                      ≤ n *k *k  := sorry
+        ∑ ⟨i,j⟩ : Q with WB i j, blk_den M i j ≤ fk * density WB := by convert sum_blk_den_le_mul_den_blk M WB h1
+        _                                      ≤ fk * n := Nat.mul_le_mul_left fk h2
+        _                                      = n * fk := Nat.mul_comm fk n
 
     have sum_tall_blocks: ∑ ⟨i,j⟩ : Q with TB i j, blk_den M i j ≤ n * k*k := sorry
 
+
+
     calc
-      ex (permPattern σ) n  = density M := sorry
+      ex (permPattern σ) n  = density M := M_maximizer
       _                     ≤ ∑ ⟨i,j⟩ : Q with WB i j, blk_den M i j +
                               ∑ ⟨i,j⟩ : Q with TB i j, blk_den M i j +
                               ∑ ⟨i,j⟩ : Q with SB i j, blk_den M i j := ?convert_split_density_blk
       _                     ≤ ∑ ⟨i,j⟩ : Q with WB i j, blk_den M i j +
                               ∑ ⟨i,j⟩ : Q with TB i j, blk_den M i j +
                               (k-1)*(k-1) * ex (permPattern σ) (n/(k*k)) := Nat.add_le_add_left sum_small_blks (∑ ⟨i,j⟩ : Q with WB i j, blk_den M i j +  ∑ ⟨i,j⟩ : Q with TB i j, blk_den M i j)
-      _                     ≤ n * k*k + n * k*k + (k-1)*(k-1) * ex (permPattern σ) (n/(k*k)) := by simp only [add_le_add_iff_right]; exact Nat.add_le_add sum_wide_blocks sum_tall_blocks
+      _                     ≤ n * k*k + n * k*k + (k-1)*(k-1) * ex (permPattern σ) (n/(k*k)) := by admit --by simp only [add_le_add_iff_right]; exact Nat.add_le_add sum_wide_blocks sum_tall_blocks
       _                     = (k-1)*(k-1) * ex (permPattern σ) (n/q) + 2*n * k*k  := by ring
 
     case convert_split_density_blk =>
       convert split_density_blk M W T <;> all_goals (
-      · rename_i x
-        simp_all only [ge_iff_le, not_le, Q, q, SB, S, W, T, B, WB, TB]
-        obtain ⟨fst, snd⟩ := x
-        simp_all only
-        apply Iff.intro
-        · intro a
-          simp_all only [and_self]
-        · intro a
-          simp_all only [and_self]
+        simp [WB,B]
+        exact And.comm
       )
-    done
 
+    done
   sorry
 
 
