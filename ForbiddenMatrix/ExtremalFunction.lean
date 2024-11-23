@@ -17,6 +17,10 @@ noncomputable def density {n:ℕ} (M : Fin n → Fin n → Prop) : ℕ := #{(i, 
 open scoped Classical in noncomputable
 def row_density {n:ℕ } (M : Fin n → Fin n → Prop) (i : Fin n): ℕ := #{j | M i j}
 
+open scoped Classical in noncomputable
+def col_density {n:ℕ } (M : Fin n → Fin n → Prop) (j : Fin n): ℕ := #{i | M i j}
+
+
 open scoped Classical in noncomputable def exRect (P : α → β → Prop) (n : ℕ) (m : ℕ) : ℕ :=
   sup {M : Fin n → Fin m → Prop | ¬ contains P M} fun M ↦ densityRect M
 
@@ -33,6 +37,26 @@ def exB [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
     (P : α → β → Bool) (n : ℕ) : ℕ :=
   exRectB P n n
 
+
+lemma empty_matrix_av_all_patterns (n :ℕ )(P : α → β → Prop) (P_nonempty : ∃ a b, P a b ):
+   let M (_ _ : Fin n) : Prop := false;
+    ¬ contains P M := by
+  let M (_ _ : Fin n) : Prop := false
+  simp
+  by_contra McontainP
+  rw [contains] at McontainP
+  obtain ⟨f, _, g, _, m⟩ := McontainP
+  obtain ⟨a, b, Pab⟩ := P_nonempty
+  have := m a b Pab
+  have := M (f a) (g b)
+  contradiction
+
+
+
+
+
+
+
 @[simp] lemma avoid_le_ex {n : ℕ} {P : α → β → Prop} (M : Fin n → Fin n → Prop) (AvoidP : ¬ contains P M)
 : density M ≤ ex P n := by
   rw [ex]
@@ -45,16 +69,11 @@ def exB [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
   case zero => --zero is easy just take the zero matrix
     have : 0 ≤ ex P n := by simp only [zero_le]
     have : ∃ (M : Fin n → Fin n → Prop), ¬contains P M ∧ 0 ≤ density M := by
-      let M (_ _ : Fin n) : Prop := false
+      have:= empty_matrix_av_all_patterns n P P_nonempty
+      extract_lets M at this
       use M
-      simp
-      by_contra McontainP
-      rw [contains] at McontainP
-      obtain ⟨f, _, g, _, m⟩ := McontainP
-      obtain ⟨a, b, Pab⟩ := P_nonempty
-      have := m a b Pab
-      have := M (f a) (g b)
-      contradiction
+      simp only [zero_le, and_true]
+      exact this
     aesop
   case succ =>
     apply Iff.intro
@@ -68,6 +87,15 @@ def exB [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
       use M
       aesop; aesop
 
+
+lemma exists_av_and_ex_eq {n : ℕ} {P : α → β → Prop} (P_nonempty : ∃ a b, P a b ) : ∃ M : Fin n → Fin n → Prop, ¬ contains P M ∧ ex P n = density M := by
+  let a := ex P n
+  have: a ≤ ex P n ↔ ∃ M, ¬contains P M ∧ a ≤ density M := le_ex_iff P P_nonempty
+  simp only [le_refl, true_iff] at this
+  obtain ⟨M,⟨h1,h2⟩⟩ := this
+  have: density M ≤ a := avoid_le_ex M h1
+  observe: a = density M
+  use M
 
 --lemma rotationInvariant (P : α → β → Prop) := ex P n = ex rotate(P) n := by sorry
 --#eval sup {j | false} id
@@ -189,4 +217,36 @@ theorem density_by_rows_ub {n c:ℕ}  (M : Fin n → Fin n → Prop)
               apply Finset.sum_le_sum
               simp [mem_filter]
               exact h_row_density_bounded
+    _         = n*c := by simp only [sum_const, card_univ, Fintype.card_fin, smul_eq_mul]
+
+
+
+theorem split_density_to_cols {n:ℕ} (M : Fin n → Fin n → Prop) : density M = ∑ i,  col_density M i := by
+  classical
+  let s : Finset (Fin n × Fin n) := { (x, y)| M x y}
+  let f : Fin n × Fin n → Fin n  := fun x ↦ x.2
+  let t : Finset (Fin n) := Finset.univ
+  have H : ∀ x ∈ s, f x ∈ t := by
+    intro x _
+    simp [f, t]
+  have h_sum_card:= Finset.card_eq_sum_card_fiberwise H
+  simp [f, t] at h_sum_card
+  have: s.card = density M := by simp [s, density]
+  rw [this] at h_sum_card
+  have: ∀ k, (filter (fun x ↦ f x = k) s).card = col_density M k := ?proof_fiber_row_density
+  simp only [this] at h_sum_card
+  exact h_sum_card
+
+  case proof_fiber_row_density =>
+    intro k
+    simp [col_density]
+    apply Finset.card_bij (fun (a:Fin n × Fin n)  _ ↦ a.1 ) ?hi ?i_inj ?i_surj; aesop;aesop;aesop
+
+theorem density_by_cols_ub {n c:ℕ}  (M : Fin n → Fin n → Prop)
+(h_col_bounded: ∀i, col_density M i ≤ c) : density M ≤  n * c  :=  calc
+    density M = ∑ i,  col_density M i := split_density_to_cols M
+    _         ≤ ∑ _, c := by
+              apply Finset.sum_le_sum
+              simp [mem_filter]
+              exact h_col_bounded
     _         = n*c := by simp only [sum_const, card_univ, Fintype.card_fin, smul_eq_mul]
