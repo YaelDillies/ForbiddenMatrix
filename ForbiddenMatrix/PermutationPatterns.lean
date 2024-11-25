@@ -1,10 +1,14 @@
 import ForbiddenMatrix.ExtremalFunction
 import ForbiddenMatrix.PatternsDef
+import ForbiddenMatrix.SmallPatterns
+
 import Mathlib.Analysis.Analytic.Composition
 import Mathlib.Combinatorics.Pigeonhole
 import Mathlib.Data.Finset.Powerset
 import ForbiddenMatrix.MatrixOperations
 import Mathlib.Tactic.Qify
+import Mathlib.Data.Nat.Choose.Basic
+
 
 
 
@@ -124,7 +128,7 @@ def rectPtsetq (n q i j :ℕ) := rectPtset n (q * i) (q * (i+1)) (q * j) (q * (j
 open scoped Classical in noncomputable
 def rectPtsetqMatrix {n:ℕ }(M : Fin n → Fin n → Prop) (q i j :ℕ) : Finset (Fin n × Fin n) := {(a, b) | M a b ∧ (a, b) ∈ rectPtsetq n q i j}
 
-@[simp] lemma card_interval {n :ℕ} (x y :ℕ) (hy: y ≤ n): #{a : Fin n | ↑a ∈ Finset.Ico x y} = #(.Ico x y) := by
+lemma card_interval {n :ℕ} (x y :ℕ) (hy: y ≤ n): #{a : Fin n | ↑a ∈ Finset.Ico x y} = #(.Ico x y) := by
   apply Finset.card_bij (fun (a: Fin n) _ ↦ ↑a) ?hi ?i_inj ?i_surj;aesop;aesop
   · -- ?i_surj
     intro b hb
@@ -867,6 +871,7 @@ lemma k_pow_n_mul (k n: ℕ) (h_k_dvd_n : k ^ 2 ∣ n):
   qify at this
   rw [this,mul_right_comm]
 
+
 lemma ex_perm_recurrence{k : ℕ } [NeZero k] (σ : Perm (Fin k)) (n : ℕ) [NeZero n] (h_k_dvd_n: k^2 ∣ n)
 : ex (permPattern σ) n ≤ (k-1)^2 * ex (permPattern σ) (n/k^2) + 2*n*k^3*((k^2).choose k) := by
 
@@ -954,6 +959,373 @@ lemma ex_perm_recurrence{k : ℕ } [NeZero k] (σ : Perm (Fin k)) (n : ℕ) [NeZ
       _ = n * k^3 * (K) := k_pow_n_mul k n h_k_dvd_n
 
 
---theorem ex_permutation {k : ℕ } (σ : Perm (Fin k)) (n : ℕ) [NeZero n] [NeZero k] (h_k_div_n: k*k ∣ n) : ex (permPattern σ) n ≤ n*k := by sorry
+lemma ex_permutation_to_dvd {k : ℕ } (σ : Perm (Fin k)) (n : ℕ)  (hkn: k ^ 2 < n) [NeZero n] [NeZero k]:
+  let n' : ℕ := n - (n % k^2);
+  ex (permPattern σ) n ≤ ex (permPattern σ) n' + 2*k^2*n := by
 
---theorem ex_permutation {k : ℕ } (σ : Perm (Fin k)) (n : ℕ) : ex (permPattern σ) n ≤ n*k := sorry
+  extract_lets n'
+  observe: 0 < n
+  observe o1: k^2 ∣ n'
+  observe o_le: n' ≤ n
+  observe: 0 < k^2
+  have n'_pos:  0 < n' := by
+    observe o1: n % k^2 < k^2
+    observe: k^2 < n
+    calc
+      0 < k^2 - n%k^2 := Nat.zero_lt_sub_of_lt o1
+      _ < n - n%k^2 := by
+        rw [Nat.sub_lt_sub_iff_right]
+        exact hkn
+        exact Nat.le_of_succ_le o1
+      _ = n' := by simp
+  observe: 0 < k
+  observe: 0 < k^2
+  observe: n' ≤ n
+
+  have h_nn': n - n' ≤ k^2 := by
+    have h1: n-n'= n%k^2 := by
+      --simp [n']
+      rw [Nat.sub_eq_iff_eq_add]
+      simp [n']
+      rw [Nat.add_comm]
+      refine Eq.symm (tsub_add_cancel_of_le ?h)
+      exact Nat.mod_le n (k ^ 2)
+      trivial
+    have h2: n % (k^2) < (k^2) := by apply Nat.mod_lt n; trivial
+    observe h3: n % (k^2) ≤ (k^2)
+    calc
+      n - n' = n%k^2 := h1
+      _ ≤  k^2 := h3
+
+  obtain ⟨M,M_av_perm,M_max⟩: ∃ M, ¬ contains (permPattern σ) M ∧ ex (permPattern σ) n = density M
+    :=  by apply exists_av_and_ex_eq;  simp [permPattern,toPEquiv]
+
+  let last := (n % k^2)
+  let I := ({ a | ↑a ∈ Finset.Ico n' n} : Finset (Fin n))
+  have h_out: ∀ i, i ∉ I → ↑i < n' := by
+    intro i
+    contrapose!
+    intro hi
+    simp [n'] at hi
+    simpa [I,n']
+
+  let T (i j : Fin n) : Prop := (i, j) ∈ Finset.univ ×ˢ I
+  let W (i j : Fin n) : Prop := (i, j) ∈ I ×ˢ Finset.univ
+  let P (i j : Fin n) : Prop := T i j ∨ W i j
+
+  have denP: density P ≤ 2*n*(n-n') := by
+    simp [density,P,T,W]
+    let s: Finset (Fin n × Fin n) :=  Finset.univ ×ˢ I
+    let t: Finset (Fin n × Fin n) :=  I ×ˢ Finset.univ
+    obtain ⟨s_card,t_card⟩ : #s = n*(n - n')  ∧  #t = n*(n - n')  := by
+      constructor
+      all_goals (
+      · simp [s,t,mul_comm]
+        left
+        dsimp [I]
+        have: #(filter (fun a : Fin n ↦ ↑a ∈ Finset.Ico n' n) Finset.univ) = #(.Ico n' n) := by  apply card_interval; rfl
+        aesop
+      )
+
+    let P_pts:= filter (fun x : Fin n × Fin n ↦ x.2 ∈ I ∨ x.1 ∈ I) Finset.univ
+    have: P_pts = (s ∪ t) := by aesop
+
+    calc
+      #P_pts = #(s ∪ t) := congrArg card this
+      _ ≤  #s + #t :=  Finset.card_union_le s t
+      _ =  n * (n - n')+ n * (n - n') := Mathlib.Tactic.LinearCombination.add_eq_eq s_card t_card
+      _ = 2* n * (n - n') := by ring
+
+
+  let M1 (i j : Fin n) : Prop := M i j ∧   P i j;
+  let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (P i j);
+
+  have dM1: density M1 ≤ 2*k^2*n := calc
+    density M1 ≤  density P := by apply den_le_den_of_subset; aesop
+    _          ≤ 2*n*(n-n') := denP
+    _          ≤ 2*k^2*n  := by
+      conv =>
+        right
+        conv =>
+          rw [mul_assoc]
+          right
+          rw [mul_comm]
+        rw [← mul_assoc]
+      exact Nat.mul_le_mul_left (2 * n) h_nn'
+
+  have dM2: density M2 ≤ ex (permPattern σ ) n' := by
+    let M' (i j : Fin n') : Prop := M i j
+    let fr: Fin n → Fin n' := fun i ↦ if h: i ∉ I then ⟨i, h_out i h⟩ else ⟨0,n'_pos⟩
+    suffices claim: ¬ contains (permPattern σ) M' by
+      let s : Finset (Fin n × Fin n) :=    {(x,y)| M2 x y}
+      let t : Finset (Fin n' × Fin n') :=  {(x,y)| M' x y}
+      have card_st: #s = #t := by
+        apply Finset.card_bij (fun a  _ ↦ (fr a.1, fr a.2) ) ?hi ?i_inj ?i_surj
+        · --?hi
+          intro a ha
+          simp [M',t]--,P,W,T,I]
+          simp [s] at ha
+          simp [M2,P,T,W] at ha
+          obtain ⟨_,A,B⟩ := ha
+          simpa [fr,A,B]
+        · --?inj
+          intro a ha b hb' H
+          simp at H
+          simp [s,M2,P,W,T] at ha hb'
+          obtain ⟨l,r⟩ := H
+          obtain ⟨_,a2,a1⟩ := ha
+          obtain ⟨_,b2,b1⟩ := hb'
+          simp [fr,a1,a2,b1,b2] at l r
+          rw [@Fin.val_eq_val] at l r
+          exact Prod.ext l r
+        · --?surj
+          intro b hb
+          simp [M2,P,W,T,t] at hb
+          simp [M',s]
+          use b.1, b.2
+          simp [M'] at hb
+          simp [M2, P,T,W]
+          suffices ↑b.2 ∉ I ∧ ↑↑b.1 ∉ I by
+            obtain ⟨h1,h2⟩ := this
+            simp [fr,h1,h2]
+            refine ⟨hb,?_⟩
+            simp_rw [@Prod.eq_iff_fst_eq_snd_eq]
+            constructor
+            have: b.1 %n = b.1 := by
+              refine Nat.mod_eq_of_modEq rfl ?hb
+              exact Fin.val_lt_of_le b.1 this
+            simp [this]
+            have: b.2 %n = b.2 := by
+              refine Nat.mod_eq_of_modEq rfl ?_
+              exact Fin.val_lt_of_le b.2 this
+            simp [this]
+          constructor
+          · simp [I]
+            observe: b.2 < n'
+            observe: b.2 < n
+            have: b.2 % n = b.2 := by exact Nat.mod_eq_of_modEq rfl this
+            rwa [this]
+          · simp [I]
+            observe: b.1 < n'
+            observe: b.1 < n
+            have: b.1 % n = b.1 := by exact Nat.mod_eq_of_modEq rfl this
+            rwa [this]
+
+      calc
+        density M2 = #s := by simp [density,s]; congr
+        _ = #t := card_st
+        _ = density M' := by simp [density,t1Space_antitone];
+        _ ≤ ex (permPattern σ) n' := avoid_le_ex M' claim
+
+    by_contra!
+    suffices contains (permPattern σ) M by contradiction
+    obtain ⟨f,hf,g,hg,prop⟩ := this
+    simp [contains] --permPattern,toPEquiv]
+    simp [M',M2] at prop
+    simp [StrictMono] at hf hg
+    refine ⟨fun i ↦ f i,?_,fun i ↦ g i,?_,?_⟩
+    · -- StrictMono f'
+      simp [StrictMono]
+      intro a b hab
+      observe o: f a < f b
+      observe: f a < n
+      observe: f b < n
+      --have: ((f a : ℕ) : Fin n) < (f b : ℕ )
+      show ((f a : ℕ) : Fin n) < f b
+      --#check Fin.val_add_one_le_of_lt
+      have:= Fin.val_add_one_le_of_lt o
+      rw [@Order.add_one_le_iff] at this
+      let fa : ℕ := f a
+      let fb : ℕ := f b
+      --have: NeZero fa := sorry
+      --have: NeZero fb := sorry
+
+      have: (Fin.ofNat' n fa) < (Fin.ofNat' n fb) := by
+        simp
+        rw [← Fin.val_fin_lt]
+        simp
+        observe: fa < n
+        observe: fb < n
+        observe h1: fa % n = fa
+        observe h2: fb % n = fb
+        rw [h1,h2]
+        simpa [fa,fb]
+
+      simp [fa,fb] at this
+      trivial
+
+    · -- StrictMono g'
+      simp [StrictMono]
+      intro a b hab
+      observe o: g a < g b
+      observe: g a < n
+      observe: g b < n
+      --have: ((f a : ℕ) : Fin n) < (f b : ℕ )
+      show ((g a : ℕ) : Fin n) < g b
+      --#check Fin.val_add_one_le_of_lt
+      have:= Fin.val_add_one_le_of_lt o
+      rw [@Order.add_one_le_iff] at this
+      let fa : ℕ := g a
+      let fb : ℕ := g b
+
+      have: (Fin.ofNat' n fa) < (Fin.ofNat' n fb) := by
+        simp
+        rw [← Fin.val_fin_lt]
+        simp
+        observe: fa < n
+        observe: fb < n
+        observe h1: fa % n = fa
+        observe h2: fb % n = fb
+        rw [h1,h2]
+        simpa [fa,fb]
+
+      simp [fa,fb] at this
+      trivial
+
+    · -- embedding
+      simp [permPattern,toPEquiv] at  prop
+      simpa [permPattern,toPEquiv]
+
+
+  calc
+    ex (permPattern σ) n = density M := M_max
+    _ = density M1 + density M2 := split_density M P
+    _ ≤ 2*k^2*n +(ex (permPattern σ ) n')  := add_le_add dM1 dM2
+    _ = (ex (permPattern σ ) n') + 2*k^2*n := by rw [Nat.add_comm]
+
+
+theorem ex_permutation {k : ℕ } (σ : Perm (Fin k)) (n : ℕ) [NeZero n] [NeZero k]:
+  ex (permPattern σ) n ≤ 2*k^4* ((k^2).choose k) * n := by
+  --cases k
+  obtain k_le1 | k_ge1 := le_or_lt k 1
+
+  · -- k ≤ 1
+    cases k
+    · simp_all
+
+    -- k = 1
+    rename_i A k B
+    suffices ex (permPattern σ ) n = 0 by
+      rw [this]
+      simp only [zero_le]
+
+    simp at k_le1
+    subst_vars
+
+    have h: (permPattern σ) = onePattern := by
+      ext i j
+      simp [onePattern, permPattern,toPEquiv]
+      aesop
+    observe: ex onePattern n = 0
+    rwa [h]
+
+  · -- k ≥ 2
+    induction' n using Nat.strong_induction_on with n ih
+
+    observe: k^2 > 0
+    observe: 0 < k
+    have: k ≤ k^2 := by
+      rw [Nat.pow_two]
+      exact Nat.le_mul_of_pos_left k this
+
+    let K := (k^2).choose k
+    observe: 0 < K
+
+    obtain n_zero | n_pos := le_or_lt n 0
+    observe : n = 0
+    simp [this]
+
+    obtain base | h_k := le_or_lt n (k^2)
+    · -- base case is trivial
+      calc
+        ex (permPattern σ) n ≤ n^2 := ex_le_trivial n
+        _ ≤ k^2 * n := by rw [Nat.pow_two]; exact Nat.mul_le_mul_right n base
+        _ ≤ 2*k^4 * n := by
+          have: k^2 ≤ k^4 := by refine Nat.pow_le_pow_of_le k_ge1 ?_; simp
+          have: k^2 ≤ 2*k^4 := by omega
+          exact Nat.mul_le_mul_right n this
+        _ ≤ 2*k^4* (K) * n := by aesop
+    · --
+      let n' : ℕ := n - (n % k^2)
+      observe hkn: k^2 < n
+      observe n_non_zero: NeZero n
+      observe o1: k^2 ∣ n'
+      observe o_le: n' ≤ n
+      have o2:  0 < n' := by
+        observe o1: n % k^2 < k^2
+        calc
+          0 < k^2 - n%k^2 := Nat.zero_lt_sub_of_lt o1
+          _ < n - n%k^2 := by
+            rw [Nat.sub_lt_sub_iff_right]
+            exact h_k
+            exact Nat.le_of_succ_le o1
+          _ = n' := by simp
+      observe o3: NeZero n'
+
+      have o4: n'/(k^2) < n := by
+        suffices 1 < (k^2) by
+          observe: n'/k^2 < n'
+          calc
+            n'/k^2 < n':= this
+            _ ≤ n := o_le
+        simpa
+
+      have ez_eq1: 2* k ^ 4 * K * (n'/k^2) =  2*((k^2)*K * n') := by
+        suffices k ^ 4 * K * (n'/k^2) =  (k^2)*K * n' by simpa [mul_assoc]
+        have: k ^ 4 * (n'/k^2) = (k^2) * n' := by
+          suffices k ^ 4 * (n'/k^2) = (k^4/k^2) * n' by
+            rw [this]
+            rw [Nat.pow_div (Nat.le.step (Nat.le.step Nat.le.refl))]
+            trivial
+          have: k^2 ∣ k^4 := by
+            observe: 2 ≤ 4
+            rwa [propext (Nat.pow_dvd_pow_iff_le_right k_ge1)]
+          rw [Nat.pow_div]
+          simp
+          rw [← Nat.mul_div_assoc (k ^ 4)]
+          rw [mul_comm]
+          rw [Nat.mul_div_assoc n' this]
+          rw [Nat.pow_div]
+          simp [mul_comm]
+          trivial;trivial;trivial;trivial;trivial
+        conv =>
+          left
+          conv =>
+            left
+            rw [mul_comm]
+          rw [mul_assoc]
+          rw [this]
+          rw [← mul_assoc]
+          left
+          rw [mul_comm]
+
+      have : ((k-1)^2 + k + 1) ≤ k^2 := by
+        have: (k-1)^2 +k +1= k^2 - k +2:= by
+          cases k
+          trivial
+          simp
+          rw [Nat.pow_two]
+          rw [pow_two]
+          rw [Nat.left_distrib]
+          simp
+          rw [Nat.Simproc.add_eq_add_ge]
+          simp
+          ring
+          simp
+        rw [this]
+        observe: k ^ 2 - k + 2  = k^2 + 2 - k
+        rw [this]
+        simpa
+
+      calc
+        ex (permPattern σ) n
+          ≤  ex (permPattern σ) n' + 2*k^2*n := ex_permutation_to_dvd σ n hkn
+        _ ≤ (k-1)^2 * ex (permPattern σ) (n'/k^2) + 2*n'*k^3*K  + 2*k^2*n:= Nat.add_le_add_right (ex_perm_recurrence σ n' o1) (2 * k ^ 2 * n)
+        _ ≤ (k-1)^2 * (2 * k ^ 4 * K * (n'/k^2))  + 2*n'*k^3*K  + 2*k^2*n := by simp;  exact Nat.mul_le_mul_left ((k - 1) ^ 2) (ih (n' / k ^ 2) o4)
+        _ = (k-1)^2 * ( 2*((k^2)*K * n')) + 2*n'*k^3*K  + 2*k^2*n := by rw [ez_eq1]
+        _ ≤ (k-1)^2 * ( 2*((k^2)*K * n))  + 2*n'*k^3*K  + 2*k^2*n := by aesop
+        _ ≤ (k-1)^2 * ( 2*((k^2)*K * n))  + 2*n*k^3*K   + 2*k^2*n := by aesop
+        _ ≤ (k-1)^2 * ( 2*((k^2)*K * n))  + 2*n*k^3*K   + 2*k^2*n*K := by aesop
+        _ = (2*k^2 *n*K) * ((k-1)^2 + k + 1)  := by ring
+        _ ≤ (2*k^2 *n*K) * k^2  := Nat.mul_le_mul_left (2 * k ^ 2 * n * K) this
+        _ = 2*k^4 *K * n := by ring

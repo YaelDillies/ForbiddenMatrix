@@ -3,6 +3,8 @@ import Mathlib.Algebra.Group.Action.Defs
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.Order.Ring.Nat
 import Mathlib.Data.Nat.Lattice
+import Mathlib.Algebra.Order.Monoid.Canonical.Basic
+
 
 open Finset
 
@@ -38,6 +40,18 @@ def exB [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
   exRectB P n n
 
 
+--open scoped Classical in noncomputable
+-- density subset
+theorem  den_le_den_of_subset {n : ℕ}{M N: Fin n → Fin n → Prop}(h: ∀ i j, M i j → N i j) : density M ≤ density N := by
+  classical
+  let pM : Finset (Fin n × Fin n) := { p | M p.1 p.1}
+  let pN : Finset (Fin n × Fin n) := { p | N p.1 p.1}
+  simp [density]
+  apply card_le_card ?_
+  intro p hp
+  aesop
+
+
 lemma empty_matrix_av_all_patterns (n :ℕ )(P : α → β → Prop) (P_nonempty : ∃ a b, P a b ):
    let M (_ _ : Fin n) : Prop := false;
     ¬ contains P M := by
@@ -51,19 +65,34 @@ lemma empty_matrix_av_all_patterns (n :ℕ )(P : α → β → Prop) (P_nonempty
   have := M (f a) (g b)
   contradiction
 
+lemma ex_le_trivial {P : α → β → Prop} (n : ℕ): ex P n ≤ n^2 := by
+  classical
+  simp [ex]
+  intro M hM
+  simp [density]
 
+  let P:= ({p : (Fin n × Fin n) | M p.1 p.2}: Finset (Fin n × Fin n))
 
+  have: Fintype.card (Fin n × Fin n) = n*n := by
+    observe: Fintype.card (Fin n) = n
+    calc
+      Fintype.card (Fin n × Fin n) = Fintype.card (Fin n) * Fintype.card (Fin n) := by simp
+      _                            = n*n := by simp
 
+  calc
+     #P ≤ Fintype.card (Fin n × Fin n) := Finset.card_le_univ P
+     _ = n*n := by exact this
+     _ = n^2 := Eq.symm (Nat.pow_two n)
 
+@[simp] lemma ex_of_zero (P : α → β → Prop) {n : ℕ} (h: n = 0): ex P n  = 0 := by simp [ex];  aesop
 
-
-@[simp] lemma avoid_le_ex {n : ℕ} {P : α → β → Prop} (M : Fin n → Fin n → Prop) (AvoidP : ¬ contains P M)
+lemma avoid_le_ex {n : ℕ} {P : α → β → Prop} (M : Fin n → Fin n → Prop) (AvoidP : ¬ contains P M)
 : density M ≤ ex P n := by
   rw [ex]
   apply le_sup
   simpa only [mem_filter, Finset.mem_univ, true_and]
 
-@[simp] theorem le_ex_iff (P : α → β → Prop) (P_nonempty : ∃ a b, P a b ) {a n : ℕ}
+theorem le_ex_iff (P : α → β → Prop) (P_nonempty : ∃ a b, P a b ) {a n : ℕ}
 : a ≤ ex P n ↔ ∃ (M : Fin n → Fin n → Prop), ¬contains P M ∧ a ≤ density M := by
   cases a
   case zero => --zero is easy just take the zero matrix
@@ -150,7 +179,7 @@ density M = density M1 + density M2 := by
   aesop
 
 
---open scoped Classical in noncomputable
+
 theorem split_density_to_rows {n:ℕ} (M : Fin n → Fin n → Prop) : density M = ∑ i,  row_density M i := by
   classical
   let s : Finset (Fin n × Fin n) := { (x, y)| M x y}
