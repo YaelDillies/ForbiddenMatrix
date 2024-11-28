@@ -1,4 +1,6 @@
 import ForbiddenMatrix.Containment
+import ForbiddenMatrix.MatrixOperations
+
 import Mathlib.Algebra.Group.Action.Defs
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.Order.Ring.Nat
@@ -8,7 +10,7 @@ import Mathlib.Algebra.Order.Monoid.Canonical.Basic
 
 open Finset
 
-variable {α β γ δ : Type*} [Preorder α] [Preorder β] [Preorder γ] [Preorder δ] {n m :ℕ}
+variable {α β γ δ : Type*} [LinearOrder α] [LinearOrder β] [LinearOrder γ] [LinearOrder δ] {n m :ℕ}
 
 open scoped Classical in
 noncomputable def densityRect (M : Fin n → Fin m → Prop) : ℕ := #{(i, j) : Fin n × Fin m | M i j}
@@ -115,6 +117,111 @@ theorem le_ex_iff (P : α → β → Prop) (P_nonempty : ∃ a b, P a b ) {a n :
       rw [ex, Finset.le_sup_iff]
       use M
       aesop; aesop
+
+
+
+
+theorem den_matrix_subset {n : ℕ} (I J : Finset (Fin n)):
+  let T (i j : Fin n) : Prop := (i, j) ∈ I ×ˢ J
+  density T = #I * #J := by sorry
+
+theorem den_matrix_column_subset {n : ℕ} (I : Finset (Fin n)):
+  let T (i j : Fin n) : Prop := (i, j) ∈ I ×ˢ  Finset.univ
+  density T = n * #I := by sorry
+
+theorem den_matrix_row_subset {n : ℕ} (I : Finset (Fin n)):
+  let T (i j : Fin n) : Prop := (i, j) ∈ Finset.univ ×ˢ I
+  density T = n * #I := by sorry
+
+theorem den_matrix_column_interval (n a b : ℕ):
+  let I := ({ x | ↑x ∈ Finset.Ico a b} : Finset (Fin n))
+  let T (i j : Fin n) : Prop := (i, j) ∈ Finset.univ ×ˢ I
+  density T = n * (b-a) := by sorry
+
+theorem den_matrix_row_interval (n a b : ℕ):
+  let I := ({ x | ↑x ∈ Finset.Ico a b} : Finset (Fin n))
+  let T (i j : Fin n) : Prop := (i, j) ∈ I ×ˢ Finset.univ
+  density T = n * (b-a) := by sorry
+
+theorem den_matrix_single_row (n x : ℕ) [NeZero n]:
+  let M (i j: Fin n) : Prop := i = x
+  density M = n  := by sorry
+
+theorem den_matrix_single_col (n x : ℕ) [NeZero n]:
+  let M (i j: Fin n) : Prop := j = x
+  density M = n  := by sorry
+
+theorem ex_ge_n_of_two_points (P : α → β → Prop) (n : ℕ) [NeZero n](h_P2: ∃ a b : (α × β), P a.1 a.2 ∧ P b.1 b.2 ∧ a ≠ b) : n ≤ ex P n := by
+
+  rcases h_P2 with ⟨p1,p2,hp1,hp2,hpneq⟩
+  obtain _ | n_pos := le_or_lt n 0
+  aesop
+  --wlog h: p1.1 = p2.1 --generalizing p1 p2
+  --nsimp at this
+  --have:= this (tranpose P)
+
+  obtain same_row | same_col : p1.1 = p2.1 ∨  p1.1 ≠ p2.1 := eq_or_ne p1.1 p2.1
+  · -- same_row
+    let V (i j: Fin n) : Prop := j = ↑0
+    observe : density V = n
+    observe denV: n ≤ density V
+
+    suffices ¬ contains P V by
+      rw [le_ex_iff]
+      use V
+      aesop
+
+    simp [contains,V,same_row]
+    intros _ _ g gm
+    have hneq: p1.2 ≠ p2.2 := by aesop
+
+    wlog h: p1.2 < p2.2 generalizing p1 p2
+    · -- justification of wlog
+      have:= this p2 p1
+      push_neg at h
+      observe h: p2.2 < p1.2
+      observe h: p2.2 < p1.2
+      aesop
+    -- proceed to the proof
+    use p2.1, p2.2
+    refine ⟨hp2, ?_⟩
+    simp [StrictMono] at gm
+    observe: g p1.2 < g p2.2
+    observe: 0 ≤ g p1.2
+    observe: 0 < g p2.2
+    observe: g p2.2 ≠ 0
+    exact this
+
+  · -- same column
+    let H (i j: Fin n) : Prop := i = ↑0
+    observe : density H = n
+    observe denH: n ≤ density H
+
+    suffices ¬ contains P H by
+      rw [le_ex_iff]
+      use H
+      aesop
+
+    simp [contains,H]
+    intros f fm _ _
+    have: p1.1 ≠ p2.1 := by aesop
+
+    wlog h: p1.1 < p2.1 generalizing p1 p2
+    · -- justification of wlog
+      have:= this p2 p1
+      push_neg at h
+      observe h: p2.1 < p1.1
+      aesop
+
+    use p2.1
+    constructor
+    · use p2.2
+    · simp [StrictMono] at fm
+      observe: f p1.1 < f p2.1
+      observe: 0 ≤ f p1.1
+      observe: 0 < f p2.1
+      observe: f p2.1 ≠ 0
+      exact this
 
 
 lemma exists_av_and_ex_eq {n : ℕ} {P : α → β → Prop} (P_nonempty : ∃ a b, P a b ) : ∃ M : Fin n → Fin n → Prop, ¬ contains P M ∧ ex P n = density M := by

@@ -1,6 +1,6 @@
 import Mathlib.Data.Fintype.Pi
 
-variable {α β γ δ : Type*} [Preorder α] [Preorder β] [Preorder γ] [Preorder δ]
+variable {α β γ δ : Type*} [LinearOrder α] [LinearOrder β] [LinearOrder γ] [LinearOrder δ]
 
 -- TODO: replace StrictMono f by StrictMonoOn {a ∣ ∃ b, P a b} f, and similarly for g to ignore blank rows/columns
 def contains (P : α → β → Prop) (M : γ → δ → Prop) : Prop :=

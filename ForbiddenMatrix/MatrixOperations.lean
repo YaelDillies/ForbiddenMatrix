@@ -5,7 +5,7 @@ import Mathlib.Tactic.FinCases
 
 open OrderDual
 
-variable {α β γ δ : Type*} [Preorder α] [Preorder β] [Preorder γ] [Preorder δ]
+variable {α β γ δ : Type*} [LinearOrder α] [LinearOrder β] [LinearOrder γ] [LinearOrder δ]
 
 def L'' : Fin 2 → Fin 2 → Prop :=
   ![

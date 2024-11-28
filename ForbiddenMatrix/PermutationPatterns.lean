@@ -9,21 +9,18 @@ import ForbiddenMatrix.MatrixOperations
 import Mathlib.Tactic.Qify
 import Mathlib.Data.Nat.Choose.Basic
 
-
-
-
 set_option linter.unusedTactic false
 set_option maxHeartbeats 800000
 
 open Finset Set
 open OrderDual
 open Equiv
---open Fin
+
 
 @[simp] lemma non_zero_int(q : ℕ ) [NeZero q]: 0 < q := by
   exact Nat.pos_of_neZero _
 
-variable {α β γ δ : Type*} [Preorder α] [Preorder β] [Preorder γ] [Preorder δ]
+variable {α β γ δ : Type*} [LinearOrder α] [LinearOrder β] [LinearOrder γ] [LinearOrder δ]
 
 theorem ex_identity (k n: ℕ) [NeZero n] : ex (identityPattern k) n ≤ (2*n-1)*(k-1) := by
   classical
@@ -1000,7 +997,6 @@ lemma ex_permutation_to_dvd {k : ℕ } (σ : Perm (Fin k)) (n : ℕ)  (hkn: k ^ 
   obtain ⟨M,M_av_perm,M_max⟩: ∃ M, ¬ contains (permPattern σ) M ∧ ex (permPattern σ) n = density M
     :=  by apply exists_av_and_ex_eq;  simp [permPattern,toPEquiv]
 
-  let last := (n % k^2)
   let I := ({ a | ↑a ∈ Finset.Ico n' n} : Finset (Fin n))
   have h_out: ∀ i, i ∉ I → ↑i < n' := by
     intro i
@@ -1068,6 +1064,7 @@ lemma ex_permutation_to_dvd {k : ℕ } (σ : Perm (Fin k)) (n : ℕ)  (hkn: k ^ 
           simp [M2,P,T,W] at ha
           obtain ⟨_,A,B⟩ := ha
           simpa [fr,A,B]
+
         · --?inj
           intro a ha b hb' H
           simp at H
@@ -1092,7 +1089,7 @@ lemma ex_permutation_to_dvd {k : ℕ } (σ : Perm (Fin k)) (n : ℕ)  (hkn: k ^ 
             simp_rw [@Prod.eq_iff_fst_eq_snd_eq]
             constructor
             have: b.1 %n = b.1 := by
-              refine Nat.mod_eq_of_modEq rfl ?hb
+              refine Nat.mod_eq_of_modEq rfl ?_
               exact Fin.val_lt_of_le b.1 this
             simp [this]
             have: b.2 %n = b.2 := by
@@ -1120,7 +1117,7 @@ lemma ex_permutation_to_dvd {k : ℕ } (σ : Perm (Fin k)) (n : ℕ)  (hkn: k ^ 
     by_contra!
     suffices contains (permPattern σ) M by contradiction
     obtain ⟨f,hf,g,hg,prop⟩ := this
-    simp [contains] --permPattern,toPEquiv]
+    simp [contains]
     simp [M',M2] at prop
     simp [StrictMono] at hf hg
     refine ⟨fun i ↦ f i,?_,fun i ↦ g i,?_,?_⟩
@@ -1130,20 +1127,17 @@ lemma ex_permutation_to_dvd {k : ℕ } (σ : Perm (Fin k)) (n : ℕ)  (hkn: k ^ 
       observe o: f a < f b
       observe: f a < n
       observe: f b < n
-      --have: ((f a : ℕ) : Fin n) < (f b : ℕ )
+
       show ((f a : ℕ) : Fin n) < f b
-      --#check Fin.val_add_one_le_of_lt
       have:= Fin.val_add_one_le_of_lt o
       rw [@Order.add_one_le_iff] at this
       let fa : ℕ := f a
       let fb : ℕ := f b
-      --have: NeZero fa := sorry
-      --have: NeZero fb := sorry
 
       have: (Fin.ofNat' n fa) < (Fin.ofNat' n fb) := by
         simp
         rw [← Fin.val_fin_lt]
-        simp
+        simp only [Fin.val_natCast]
         observe: fa < n
         observe: fb < n
         observe h1: fa % n = fa
@@ -1181,7 +1175,6 @@ lemma ex_permutation_to_dvd {k : ℕ } (σ : Perm (Fin k)) (n : ℕ)  (hkn: k ^ 
 
       simp [fa,fb] at this
       trivial
-
     · -- embedding
       simp [permPattern,toPEquiv] at  prop
       simpa [permPattern,toPEquiv]
@@ -1303,15 +1296,8 @@ theorem ex_permutation {k : ℕ } (σ : Perm (Fin k)) (n : ℕ) [NeZero n] [NeZe
         have: (k-1)^2 +k +1= k^2 - k +2:= by
           cases k
           trivial
-          simp
-          rw [Nat.pow_two]
-          rw [pow_two]
-          rw [Nat.left_distrib]
-          simp
-          rw [Nat.Simproc.add_eq_add_ge]
-          simp
+          simp [pow_two,left_distrib]
           ring
-          simp
         rw [this]
         observe: k ^ 2 - k + 2  = k^2 + 2 - k
         rw [this]
