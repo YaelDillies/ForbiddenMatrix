@@ -17,7 +17,7 @@ open OrderDual
 open Equiv
 
 
-@[simp] lemma non_zero_int(q : ℕ ) [NeZero q]: 0 < q := by
+@[simp] private lemma non_zero_int(q : ℕ ) [NeZero q]: 0 < q := by
   exact Nat.pos_of_neZero _
 
 variable {α β γ δ : Type*} [LinearOrder α] [LinearOrder β] [LinearOrder γ] [LinearOrder δ]
@@ -103,7 +103,7 @@ theorem ex_identity (k n: ℕ) [NeZero n] : ex (identityPattern k) n ≤ (2*n-1)
 --
 -- Marcus Tardos' theorem
 --
-@[simp]
+@[simp] private
 lemma le_mul_div_add_one {n q :ℕ} (p : Fin n) (h: 0 < q): p < q * (p / q + 1) := by
   rw [Nat.mul_comm]
   exact Nat.lt_mul_of_div_lt (Nat.lt_add_one _) h
@@ -115,7 +115,7 @@ open scoped Classical in noncomputable
 def rectPtsetqMatrix {n:ℕ }(M : Fin n → Fin n → Prop) (q i j :ℕ) : Finset (Fin n × Fin n) := {(a, b) | M a b ∧ (a, b) ∈ rectPtsetq n q i j}
 
 
-@[simp] lemma card_intervalq (n q i : ℕ) (hn: 0 < n) (hq: q ∣ n) (h: i < n/q) : #{ a : Fin n | ↑a ∈ Finset.Ico (q * ↑i) (q * (↑i + 1))} = q := by
+@[simp] private lemma card_intervalq (n q i : ℕ) (hn: 0 < n) (hq: q ∣ n) (h: i < n/q) : #{ a : Fin n | ↑a ∈ Finset.Ico (q * ↑i) (q * (↑i + 1))} = q := by
   have hy: q * (i + 1) ≤ n := by
     observe h1: q*(n/q - 1) = q* (n/q) - q
     observe h2: q* (n/q) = n
@@ -138,7 +138,7 @@ def rectPtsetqMatrix {n:ℕ }(M : Fin n → Fin n → Prop) (q i j :ℕ) : Finse
      _ = (q * (↑i + 1)) - (q * ↑i)  := Nat.card_Ico (q * i) (q * (i + 1))
      _ = q  := Nat.sub_eq_of_eq_add' rfl
 
-@[simp] lemma card_rectPtsetq (n q i j : ℕ) (hq: q ∣ n) (h: i < n/q ∧ j < n/q) : #(rectPtsetq n q i j) = q*q := by
+@[simp] private lemma card_rectPtsetq (n q i j : ℕ) (hq: q ∣ n) (h: i < n/q ∧ j < n/q) : #(rectPtsetq n q i j) = q*q := by
   simp [rectPtsetq]
   have:= card_rectPtSet n (q * i) (q * (i+1)) (q * j) (q * (j+1)) ?_
   convert this
@@ -153,7 +153,7 @@ def rectPtsetqMatrix {n:ℕ }(M : Fin n → Fin n → Prop) (q i j :ℕ) : Finse
     q*(j+1) ≤ q*(n/q) := Nat.mul_le_mul_left q hj
     _      = n       := Nat.mul_div_cancel' hq
 
-@[simp] lemma card_rectPtsetqMatrix {n :ℕ }(M : Fin n → Fin n → Prop) (q : ℕ )(i j :ℕ) (hq: q ∣ n) (h: i < n/q ∧ j < n/q):
+@[simp] private lemma card_rectPtsetqMatrix {n :ℕ }(M : Fin n → Fin n → Prop) (q : ℕ )(i j :ℕ) (hq: q ∣ n) (h: i < n/q ∧ j < n/q):
   (rectPtsetqMatrix M q i j).card ≤ q*q := by
 
   suffices claim: (rectPtsetqMatrix M q i j).card ≤ (rectPtsetq n q i j).card by calc
@@ -174,7 +174,7 @@ open scoped Classical in noncomputable
 def blk_den {n q:ℕ } (M : Fin n → Fin n → Prop) (i j : Fin (n/q)):
   ℕ := #(rectPtsetqMatrix M q i j)
 
-@[simp] lemma p_to_pq{n:ℕ} {p : Fin n × Fin n} {q : ℕ} [NeZero q]:
+@[simp] private lemma p_to_pq{n:ℕ} {p : Fin n × Fin n} {q : ℕ} [NeZero q]:
 p ∈ rectPtset n (q * (↑p.1 / q)) (q * (↑p.1 / q + 1)) (q * (↑p.2 / q)) (q * (↑p.2 / q + 1)) := by
   simp only [rectPtset, Finset.mem_Ico, mem_product, mem_filter, Finset.mem_univ, true_and]
   have hq: 0 < q := NeZero.pos _
@@ -184,7 +184,7 @@ p ∈ rectPtset n (q * (↑p.1 / q)) (q * (↑p.1 / q + 1)) (q * (↑p.2 / q)) (
   · exact Nat.mul_div_le (↑p.2) q
   · exact le_mul_div_add_one p.2 hq
 
-@[simp] lemma p_to_pq'{n:ℕ} (p : Fin n × Fin n) {q : ℕ} [NeZero q]:
+@[simp] private lemma p_to_pq'{n:ℕ} (p : Fin n × Fin n) {q : ℕ} [NeZero q]:
 p ∈ rectPtset n (q * (↑p.1 / q)) (q * (↑p.1 / q + 1)) (q * (↑p.2 / q)) (q * (↑p.2 / q + 1)) := p_to_pq
 
 open scoped Classical
@@ -237,7 +237,7 @@ density M = ∑ ⟨i, j⟩ : Fin (n/q) × Fin (n/q) with B i j, blk_den M i j :=
       aesop
   done
 
-lemma f_pt_to_blk {n q: ℕ} [NeZero q] (h_q_div_n: q ∣ n) {i j : Fin (n/q)} {a b : Fin (n)} (H: (a, b) ∈ rectPtsetq n q ↑i ↑j):
+private lemma f_pt_to_blk {n q: ℕ} [NeZero q] (h_q_div_n: q ∣ n) {i j : Fin (n/q)} {a b : Fin (n)} (H: (a, b) ∈ rectPtsetq n q ↑i ↑j):
 let fq : Fin n → Fin (n/q) := fun x ↦ ⟨x/q, by apply Nat.div_lt_div_of_lt_of_dvd h_q_div_n; exact x.isLt ⟩;
 fq a = i ∧ fq b = j := by
   extract_lets fq
@@ -489,6 +489,7 @@ lemma av_perm_contract_av_perm {n k: ℕ} (q :ℕ) (σ : Perm (Fin k)) (M : Fin 
 
 
 
+private
 lemma density_WB {n k : ℕ} (h_n: 0 < n)(h_k: k^2 ∣ n)(M : Fin n → Fin n → Prop) {σ : Perm (Fin k)}  (M_avoid_perm: ¬ contains (permPattern σ) M):
 let q := k^2
 let B := blkMatrix M q
@@ -621,6 +622,7 @@ density WB ≤ (n/k^2)*(k*(k^2).choose k):= by
     simp only [f]
     rwa [H'] at H
 
+private
 lemma density_TB {n k : ℕ} (h_n: 0 < n)(h_k: k^2 ∣ n)(M : Fin n → Fin n → Prop) {σ : Perm (Fin k)} (M_avoid_perm: ¬ contains (permPattern σ) M):
 let q := k^2
 let B := blkMatrix M q
@@ -764,7 +766,7 @@ refine ⟨f',f_mono,g,g_mono,?_⟩
   rwa [H'] at H
 
 
-
+private
 lemma blk_den_SB { n : ℕ} (k : ℕ ) (M : Fin n → Fin n → Prop):
   let q := k ^ 2;
   let B := blkMatrix M q;
@@ -799,7 +801,7 @@ lemma blk_den_SB { n : ℕ} (k : ℕ ) (M : Fin n → Fin n → Prop):
       mem_product, mem_filter, Finset.mem_univ, true_and, R, C]
     aesop
 
-
+private
 lemma blk_den_k4 {k n: ℕ} (h_k_dvd_n : k ^ 2 ∣ n) (M : Fin n → Fin n → Prop):
   let q := k ^ 2;
   ∀ (i j : Fin (n / q)), blk_den M i j ≤ k ^ 4 := by
@@ -815,6 +817,7 @@ lemma blk_den_k4 {k n: ℕ} (h_k_dvd_n : k ^ 2 ∣ n) (M : Fin n → Fin n → P
   exact this
   aesop
 
+private
 lemma k_pow_n_mul (k n: ℕ) (h_k_dvd_n : k ^ 2 ∣ n):
   let K := (k ^ 2).choose k;
   k ^ 4 * (n / k ^ 2 * (k * K)) = n * k ^ 3 * K := by
@@ -899,7 +902,10 @@ lemma ex_perm_recurrence{k : ℕ } [NeZero k] (σ : Perm (Fin k)) (n : ℕ) [NeZ
 
   case sum_wide_blks_proof =>
     show  ∑ ⟨i, j⟩ : Q with WB i j, blk_den M i j ≤ n * k^3 * (K)
-    observe blk_den_trivial: ∀ (i j : Fin (n / q)), blk_den M i j ≤ k^4
+    have blk_den_trivial: ∀ (i j : Fin (n / q)), blk_den M i j ≤ k^4 := by
+      apply blk_den_k4
+      simp_all
+
     observe h1: ∀ (i j : Fin (n / q)), WB i j → blk_den M i j ≤ k^4
 
     calc
@@ -910,7 +916,9 @@ lemma ex_perm_recurrence{k : ℕ } [NeZero k] (σ : Perm (Fin k)) (n : ℕ) [NeZ
 
   case sum_tall_blks_proof =>
     show ∑ ⟨i, j⟩ : Q with TB i j, blk_den M i j ≤ n * k^3 * (K)
-    observe blk_den_trivial: ∀ (i j : Fin (n / q)), blk_den M i j ≤ k^4
+    have blk_den_trivial: ∀ (i j : Fin (n / q)), blk_den M i j ≤ k^4 := by
+      apply blk_den_k4
+      simp_all
     observe h1: ∀ (i j : Fin (n / q)), TB i j → blk_den M i j ≤ k^4
 
     calc
@@ -919,7 +927,7 @@ lemma ex_perm_recurrence{k : ℕ } [NeZero k] (σ : Perm (Fin k)) (n : ℕ) [NeZ
       _ ≤ k^4 * ((n/k^2)*(k*K)) := Nat.mul_le_mul_left (k ^ 4) (density_TB hn_non_zero h_k_dvd_n M M_av_perm)
       _ = n * k^3 * (K) := k_pow_n_mul k n h_k_dvd_n
 
-
+private
 lemma ex_permutation_to_dvd {k : ℕ } (σ : Perm (Fin k)) (n : ℕ)  (hkn: k ^ 2 < n) [NeZero n] [NeZero k]:
   let n' : ℕ := n - (n % k^2);
   ex (permPattern σ) n ≤ ex (permPattern σ) n' + 2*k^2*n := by
@@ -1280,14 +1288,14 @@ theorem ex_permutation {k : ℕ } (σ : Perm (Fin k)) (n : ℕ) [NeZero n] [NeZe
         _ ≤ (2*k^2 *n*K) * k^2  := Nat.mul_le_mul_left (2 * k ^ 2 * n * K) this
         _ = 2*k^4 *K * n := by ring
 
-  theorem ex_perm_lb{k : ℕ } (σ : Perm (Fin k)) (n : ℕ) [NeZero n] (hk: 2 ≤ k):
-   n ≤  ex (permPattern σ) n  := by
+theorem ex_perm_lb{k : ℕ } (σ : Perm (Fin k)) (n : ℕ) [NeZero n] (hk: 2 ≤ k):
+  n ≤  ex (permPattern σ) n  := by
 
-   let s : Finset (Fin k):= Finset.univ
-   have: 1 < #s := by aesop
-   rw [Finset.one_lt_card_iff] at this
-   obtain ⟨a,b,⟨_,_,h⟩⟩ := this
+  let s : Finset (Fin k):= Finset.univ
+  have: 1 < #s := by aesop
+  rw [Finset.one_lt_card] at this
+  obtain ⟨a,_,b,_,_⟩ := this
 
-   apply ex_ge_n_of_two_points
-   simp [permPattern,toPEquiv]
-   use a,b
+  apply ex_ge_n_of_two_points
+  simp [permPattern,toPEquiv]
+  use a,b
