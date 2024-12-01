@@ -41,7 +41,6 @@ def exB [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
     (P : α → β → Bool) (n : ℕ) : ℕ :=
   exRectB P n n
 
-
 --open scoped Classical in noncomputable
 -- density subset
 theorem  den_le_den_of_subset {n : ℕ}{M N: Fin n → Fin n → Prop}(h: ∀ i j, M i j → N i j) : density M ≤ density N := by
@@ -121,48 +120,253 @@ theorem le_ex_iff (P : α → β → Prop) (P_nonempty : ∃ a b, P a b ) {a n :
 
 
 
-theorem den_matrix_subset {n : ℕ} (I J : Finset (Fin n)):
-  let T (i j : Fin n) : Prop := (i, j) ∈ I ×ˢ J
-  density T = #I * #J := by sorry
+theorem split_density_to_rows {n:ℕ} (M : Fin n → Fin n → Prop) : density M = ∑ i,  row_density M i := by
+  classical
+  let s : Finset (Fin n × Fin n) := { (x, y)| M x y}
+  let f : Fin n × Fin n → Fin n  := fun x ↦ x.1
+  let t : Finset (Fin n) := Finset.univ
+  have H : ∀ x ∈ s, f x ∈ t := by
+    intro x _
+    simp [f, t]
+  have h_sum_card:= Finset.card_eq_sum_card_fiberwise H
+  simp [f, t] at h_sum_card
+  have: s.card = density M := by simp [s, density]
+  rw [this] at h_sum_card
+  have: ∀ k, (filter (fun x ↦ f x = k) s).card = row_density M k := ?proof_fiber_row_density
+  simp only [this] at h_sum_card
+  exact h_sum_card
 
-theorem den_matrix_column_subset {n : ℕ} (I : Finset (Fin n)):
-  let T (i j : Fin n) : Prop := (i, j) ∈ I ×ˢ  Finset.univ
-  density T = n * #I := by sorry
+  case proof_fiber_row_density =>
+    intro k
+    simp [row_density]
+    apply Finset.card_bij (fun (a:Fin n × Fin n)  _ ↦ a.2 ) ?hi ?i_inj ?i_surj; aesop;aesop;aesop
 
-theorem den_matrix_row_subset {n : ℕ} (I : Finset (Fin n)):
-  let T (i j : Fin n) : Prop := (i, j) ∈ Finset.univ ×ˢ I
-  density T = n * #I := by sorry
+    -- 30 lines --> 1 lines using apply (and lean will figure out what is needed.)
 
-theorem den_matrix_column_interval (n a b : ℕ):
-  let I := ({ x | ↑x ∈ Finset.Ico a b} : Finset (Fin n))
-  let T (i j : Fin n) : Prop := (i, j) ∈ Finset.univ ×ˢ I
-  density T = n * (b-a) := by sorry
+    /-let s := filter (fun x_1 ↦ x_1.1 = k) {(x, y)| M x y}
+    let t := filter (fun j ↦ M k j) Finset.univ
+    let i : (a :Fin n × Fin n) → a ∈ s → Fin n := fun a h ↦ a.2
+    let hi : ∀ (a : Fin n × Fin n) (ha : a ∈ s), i a ha ∈ t := by
+      intro a ha
+      simp [i]
+      simp [s] at ha
+      refine mem_filter.mpr ?_
+      constructor
+      simp
+      rw [ha.2] at ha
+      exact ha.1
+    let i_inj : ∀ (a₁ : Fin n × Fin n) (ha₁ : a₁ ∈ s) (a₂ : Fin n × Fin n) (ha₂ : a₂ ∈ s), i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂ := by
+      intro a1 ha1 a2 ha2 H
+      simp [i] at H
+      simp [s] at ha1 ha2
+      have : a1.1 = a2.1 := by omega
+      exact Prod.ext this H
+    let i_surj : ∀ b ∈ t, ∃ a, ∃ (ha : a ∈ s), i a ha = b :=  by
+      intro b hb
+      let a := (k, b)
+      let ha : a ∈ s := by
+        refine mem_filter.mpr ?_
+        simp [t] at hb
+        simp [mem_filter]
+        exact hb
+      use a
+      use ha
+    have:= Finset.card_bij i hi i_inj i_surj
+    convert this
+    done-/
 
-theorem den_matrix_row_interval (n a b : ℕ):
-  let I := ({ x | ↑x ∈ Finset.Ico a b} : Finset (Fin n))
-  let T (i j : Fin n) : Prop := (i, j) ∈ I ×ˢ Finset.univ
-  density T = n * (b-a) := by sorry
 
-theorem den_matrix_single_row (n x : ℕ) [NeZero n]:
-  let M (i j: Fin n) : Prop := i = x
-  density M = n  := by sorry
+--  classical
+  --pairwise disjoint union is too hard
 
-theorem den_matrix_single_col (n x : ℕ) [NeZero n]:
-  let M (i j: Fin n) : Prop := j = x
-  density M = n  := by sorry
+theorem density_by_rows_ub {n c:ℕ}  (M : Fin n → Fin n → Prop)
+(h_row_density_bounded: ∀i, row_density M i ≤ c) : density M ≤  n * c  :=  calc
+    density M = ∑ i,  row_density M i := split_density_to_rows M
+    _         ≤ ∑ _, c := by
+              apply Finset.sum_le_sum
+              simp [mem_filter]
+              exact h_row_density_bounded
+    _         = n*c := by simp only [sum_const, card_univ, Fintype.card_fin, smul_eq_mul]
+
+
+
+theorem split_density_to_cols {n:ℕ} (M : Fin n → Fin n → Prop) : density M = ∑ i,  col_density M i := by
+  classical
+  let s : Finset (Fin n × Fin n) := { (x, y)| M x y}
+  let f : Fin n × Fin n → Fin n  := fun x ↦ x.2
+  let t : Finset (Fin n) := Finset.univ
+  have H : ∀ x ∈ s, f x ∈ t := by
+    intro x _
+    simp [f, t]
+  have h_sum_card:= Finset.card_eq_sum_card_fiberwise H
+  simp [f, t] at h_sum_card
+  have: s.card = density M := by simp [s, density]
+  rw [this] at h_sum_card
+  have: ∀ k, (filter (fun x ↦ f x = k) s).card = col_density M k := ?proof_fiber_row_density
+  simp only [this] at h_sum_card
+  exact h_sum_card
+
+  case proof_fiber_row_density =>
+    intro k
+    simp [col_density]
+    apply Finset.card_bij (fun (a:Fin n × Fin n)  _ ↦ a.1 ) ?hi ?i_inj ?i_surj; aesop;aesop;aesop
+
+theorem density_by_cols_ub {n c:ℕ}  (M : Fin n → Fin n → Prop)
+(h_col_bounded: ∀i, col_density M i ≤ c) : density M ≤  n * c  :=  calc
+    density M = ∑ i,  col_density M i := split_density_to_cols M
+    _         ≤ ∑ _, c := by
+              apply Finset.sum_le_sum
+              simp [mem_filter]
+              exact h_col_bounded
+    _         = n*c := by simp only [sum_const, card_univ, Fintype.card_fin, smul_eq_mul]
+
+
+
+
+def rectPtset (n a₁ b₁ a₂ b₂: ℕ) : Finset (Fin n × Fin n) :=
+  ({ a | ↑a ∈ Finset.Ico a₁ b₁} : Finset (Fin n)) ×ˢ ({ a | ↑a ∈ Finset.Ico a₂ b₂} : Finset (Fin n))
+
+open scoped Classical in noncomputable
+def rectPtsetMatrix {n :ℕ }(M : Fin n → Fin n → Prop) (a₁ b₁ a₂ b₂: ℕ) : Finset (Fin n × Fin n) :=
+  {(a, b) | M a b ∧ (a, b) ∈ (rectPtset n a₁ b₁ a₂ b₂)}
+
+open scoped Classical in noncomputable
+def rectPtsetSubsetMatrix {n :ℕ }(M : Fin n → Fin n → Prop) (R C : Finset (Fin n)) : Finset (Fin n × Fin n) :=
+  {(a, b) | M a b ∧ (a, b) ∈ R ×ˢ C}
+
+lemma card_interval {n :ℕ} (x y :ℕ) (hy: y ≤ n): #{a : Fin n | ↑a ∈ Finset.Ico x y} = #(.Ico x y) := by
+  apply Finset.card_bij (fun (a: Fin n) _ ↦ ↑a) ?hi ?i_inj ?i_surj;aesop;aesop
+  · -- ?i_surj
+    intro b hb
+    simp at hb
+    have: b < n := by omega
+    use ⟨b, this⟩
+    simp_all only [Finset.mem_Ico, mem_filter, Finset.mem_univ, and_self, exists_const]
+
+
+@[simp] lemma card_rectPtSet (n a₁ b₁ a₂ b₂: ℕ) (h: b₁ ≤ n ∧ b₂ ≤ n): (rectPtset n a₁ b₁ a₂ b₂).card = (b₁ -a₁ )*(b₂ - a₂) := by
+  simp only [rectPtset, card_product]
+  suffices claim: ∀x y, y ≤ n → #{a : Fin n | ↑a ∈ Finset.Ico x y} = #(.Ico x y) by aesop
+  intro x y hy
+  exact card_interval x y hy
+
+@[simp] lemma card_rectPtsetSubsetMatrix {n :ℕ }(M : Fin n → Fin n → Prop) (R C : Finset (Fin n)) :
+    #(rectPtsetSubsetMatrix M R C) ≤ #R * #C := by
+  calc
+    #(rectPtsetSubsetMatrix M R C)
+      ≤ #(R ×ˢ C) := ?_
+    _ = #R * #C := card_product R C
+  gcongr
+  simp only [rectPtsetSubsetMatrix, Prod.mk.eta, mem_product]
+  intro a ha
+  aesop
+
+
+ theorem den_all1_matrix_subset {n : ℕ} (I J : Finset (Fin n)):
+  let M (i j : Fin n) : Prop := (i, j) ∈ I ×ˢ J
+  density M = #I * #J := by
+  extract_lets M
+  calc
+    density M =  #(I ×ˢ J) := ?_
+    _ = #I * #J := card_product I J
+
+  dsimp [M,density]
+  have: I ×ˢ J = filter (fun x ↦ (x.1, x.2) ∈ I ×ˢ J) univ := by aesop
+  convert this
+  aesop
+
+
+
+theorem den_all1_matrix_row_subset {n : ℕ} (I : Finset (Fin n)):
+  let M (i j : Fin n) : Prop := (i, j) ∈ I ×ˢ  Finset.univ
+  density M = n * #I := by
+
+  extract_lets M
+  let J : Finset (Fin n):= Finset.univ
+  have:= den_all1_matrix_subset I J
+  simp at this
+  rw [mul_comm]
+  convert this
+  aesop
+  aesop
+
+
+theorem den_all1_matrix_col_subset {n : ℕ} (I : Finset (Fin n)):
+  let M (i j : Fin n) : Prop := (i, j) ∈ Finset.univ ×ˢ I
+  density M = n * #I := by
+
+  extract_lets M
+  let J : Finset (Fin n):= Finset.univ
+  have:= den_all1_matrix_subset J I
+  simp at this
+  convert this
+  aesop
+  aesop
+
+
+theorem den_all1_matrix_column_interval {n : ℕ} (a b : Fin n):
+  let I := ({ x | ↑x ∈ Finset.Icc a.1 b.1} : Finset (Fin n))
+  let M (i j : Fin n) : Prop := (i, j) ∈ Finset.univ ×ˢ I
+  density M = n * (b+1-a) := by
+
+  extract_lets I M
+  have h1: #I = #(.Icc a.1 b.1) := by
+    apply card_interval
+    exact b.2
+  observe h2: #(.Icc a.1 b.1) = b.1 +1 - a.1
+  calc
+    density M = n* #I := by exact den_all1_matrix_col_subset I
+    _ = n* #(.Icc a.1 b.1) := by exact congrArg (HMul.hMul n) h1
+    _ = n* (b+1-a) := by exact congrArg (HMul.hMul n) h2
+
+
+theorem den_all1_matrix_row_interval {n : ℕ} (a b : Fin n):
+  let I := ({ x | ↑x ∈ Finset.Icc a.1 b.1} : Finset (Fin n))
+  let M (i j : Fin n) : Prop := (i, j) ∈ I ×ˢ Finset.univ
+  density M = n * (b+1-a) := by
+
+  extract_lets I M
+  have h1: #I = #(.Icc a.1 b.1) := by
+    apply card_interval
+    exact b.2
+  observe h2: #(.Icc a.1 b.1) = b.1 +1- a.1
+  calc
+    density M = n* #I := by exact den_all1_matrix_row_subset I
+    _ = n* #(.Icc a.1 b.1) := by exact congrArg (HMul.hMul n) h1
+    _ = n* (b+1-a) := by exact congrArg (HMul.hMul n) h2
+
+
+theorem den_all1_matrix_single_row {n : ℕ} (x : Fin n):
+  let M (i _: Fin n) : Prop :=  i = x
+  density M = n  := by
+
+  extract_lets M
+  have:= den_all1_matrix_row_interval x x
+  simp [density] at this
+  simp [density,M]
+  convert this
+  aesop
+
+
+theorem den_all1_matrix_single_col  {n : ℕ} (x : Fin n):
+  let M (_ j: Fin n) : Prop := j = x
+  density M = n  := by
+  extract_lets M
+  have:= den_all1_matrix_column_interval x x
+  simp [density] at this
+  simp [density,M]
+  convert this
+  aesop
 
 theorem ex_ge_n_of_two_points (P : α → β → Prop) (n : ℕ) [NeZero n](h_P2: ∃ a b : (α × β), P a.1 a.2 ∧ P b.1 b.2 ∧ a ≠ b) : n ≤ ex P n := by
 
   rcases h_P2 with ⟨p1,p2,hp1,hp2,hpneq⟩
   obtain _ | n_pos := le_or_lt n 0
   aesop
-  --wlog h: p1.1 = p2.1 --generalizing p1 p2
-  --nsimp at this
-  --have:= this (tranpose P)
 
   obtain same_row | same_col : p1.1 = p2.1 ∨  p1.1 ≠ p2.1 := eq_or_ne p1.1 p2.1
   · -- same_row
-    let V (i j: Fin n) : Prop := j = ↑0
+    let V (i j: Fin n) : Prop := ↑j = 0
     observe : density V = n
     observe denV: n ≤ density V
 
@@ -179,7 +383,6 @@ theorem ex_ge_n_of_two_points (P : α → β → Prop) (n : ℕ) [NeZero n](h_P2
     · -- justification of wlog
       have:= this p2 p1
       push_neg at h
-      observe h: p2.2 < p1.2
       observe h: p2.2 < p1.2
       aesop
     -- proceed to the proof
@@ -284,105 +487,3 @@ density M = density M1 + density M2 := by
     contradiction
   rw [← seqs1s2] at s1eqs2card
   aesop
-
-
-
-theorem split_density_to_rows {n:ℕ} (M : Fin n → Fin n → Prop) : density M = ∑ i,  row_density M i := by
-  classical
-  let s : Finset (Fin n × Fin n) := { (x, y)| M x y}
-  let f : Fin n × Fin n → Fin n  := fun x ↦ x.1
-  let t : Finset (Fin n) := Finset.univ
-  have H : ∀ x ∈ s, f x ∈ t := by
-    intro x _
-    simp [f, t]
-  have h_sum_card:= Finset.card_eq_sum_card_fiberwise H
-  simp [f, t] at h_sum_card
-  have: s.card = density M := by simp [s, density]
-  rw [this] at h_sum_card
-  have: ∀ k, (filter (fun x ↦ f x = k) s).card = row_density M k := ?proof_fiber_row_density
-  simp only [this] at h_sum_card
-  exact h_sum_card
-
-  case proof_fiber_row_density =>
-    intro k
-    simp [row_density]
-    apply Finset.card_bij (fun (a:Fin n × Fin n)  _ ↦ a.2 ) ?hi ?i_inj ?i_surj; aesop;aesop;aesop
-
-    -- 30 lines --> 1 lines using apply (and lean will figure out what is needed.)
-
-    /-let s := filter (fun x_1 ↦ x_1.1 = k) {(x, y)| M x y}
-    let t := filter (fun j ↦ M k j) Finset.univ
-    let i : (a :Fin n × Fin n) → a ∈ s → Fin n := fun a h ↦ a.2
-    let hi : ∀ (a : Fin n × Fin n) (ha : a ∈ s), i a ha ∈ t := by
-      intro a ha
-      simp [i]
-      simp [s] at ha
-      refine mem_filter.mpr ?_
-      constructor
-      simp
-      rw [ha.2] at ha
-      exact ha.1
-    let i_inj : ∀ (a₁ : Fin n × Fin n) (ha₁ : a₁ ∈ s) (a₂ : Fin n × Fin n) (ha₂ : a₂ ∈ s), i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂ := by
-      intro a1 ha1 a2 ha2 H
-      simp [i] at H
-      simp [s] at ha1 ha2
-      have : a1.1 = a2.1 := by omega
-      exact Prod.ext this H
-    let i_surj : ∀ b ∈ t, ∃ a, ∃ (ha : a ∈ s), i a ha = b :=  by
-      intro b hb
-      let a := (k, b)
-      let ha : a ∈ s := by
-        refine mem_filter.mpr ?_
-        simp [t] at hb
-        simp [mem_filter]
-        exact hb
-      use a
-      use ha
-    have:= Finset.card_bij i hi i_inj i_surj
-    convert this
-    done-/
-
-
---  classical
-  --pairwise disjoint union is too hard
-
-theorem density_by_rows_ub {n c:ℕ}  (M : Fin n → Fin n → Prop)
-(h_row_density_bounded: ∀i, row_density M i ≤ c) : density M ≤  n * c  :=  calc
-    density M = ∑ i,  row_density M i := split_density_to_rows M
-    _         ≤ ∑ _, c := by
-              apply Finset.sum_le_sum
-              simp [mem_filter]
-              exact h_row_density_bounded
-    _         = n*c := by simp only [sum_const, card_univ, Fintype.card_fin, smul_eq_mul]
-
-
-
-theorem split_density_to_cols {n:ℕ} (M : Fin n → Fin n → Prop) : density M = ∑ i,  col_density M i := by
-  classical
-  let s : Finset (Fin n × Fin n) := { (x, y)| M x y}
-  let f : Fin n × Fin n → Fin n  := fun x ↦ x.2
-  let t : Finset (Fin n) := Finset.univ
-  have H : ∀ x ∈ s, f x ∈ t := by
-    intro x _
-    simp [f, t]
-  have h_sum_card:= Finset.card_eq_sum_card_fiberwise H
-  simp [f, t] at h_sum_card
-  have: s.card = density M := by simp [s, density]
-  rw [this] at h_sum_card
-  have: ∀ k, (filter (fun x ↦ f x = k) s).card = col_density M k := ?proof_fiber_row_density
-  simp only [this] at h_sum_card
-  exact h_sum_card
-
-  case proof_fiber_row_density =>
-    intro k
-    simp [col_density]
-    apply Finset.card_bij (fun (a:Fin n × Fin n)  _ ↦ a.1 ) ?hi ?i_inj ?i_surj; aesop;aesop;aesop
-
-theorem density_by_cols_ub {n c:ℕ}  (M : Fin n → Fin n → Prop)
-(h_col_bounded: ∀i, col_density M i ≤ c) : density M ≤  n * c  :=  calc
-    density M = ∑ i,  col_density M i := split_density_to_cols M
-    _         ≤ ∑ _, c := by
-              apply Finset.sum_le_sum
-              simp [mem_filter]
-              exact h_col_bounded
-    _         = n*c := by simp only [sum_const, card_univ, Fintype.card_fin, smul_eq_mul]

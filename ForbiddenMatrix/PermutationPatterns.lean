@@ -10,7 +10,7 @@ import Mathlib.Tactic.Qify
 import Mathlib.Data.Nat.Choose.Basic
 
 set_option linter.unusedTactic false
-set_option maxHeartbeats 800000
+--set_option maxHeartbeats 800000
 
 open Finset Set
 open OrderDual
@@ -108,48 +108,12 @@ lemma le_mul_div_add_one {n q :ℕ} (p : Fin n) (h: 0 < q): p < q * (p / q + 1) 
   rw [Nat.mul_comm]
   exact Nat.lt_mul_of_div_lt (Nat.lt_add_one _) h
 
-def rectPtset (n a₁ b₁ a₂ b₂: ℕ) : Finset (Fin n × Fin n) :=
-  ({ a | ↑a ∈ Finset.Ico a₁ b₁} : Finset (Fin n)) ×ˢ ({ a | ↑a ∈ Finset.Ico a₂ b₂} : Finset (Fin n))
-
-open scoped Classical in noncomputable
-def rectPtsetMatrix {n :ℕ }(M : Fin n → Fin n → Prop) (a₁ b₁ a₂ b₂: ℕ) : Finset (Fin n × Fin n) :=
-  {(a, b) | M a b ∧ (a, b) ∈ (rectPtset n a₁ b₁ a₂ b₂)}
-
-open scoped Classical in noncomputable
-def rectPtsetSubsetMatrix {n :ℕ }(M : Fin n → Fin n → Prop) (R C : Finset (Fin n)) : Finset (Fin n × Fin n) :=
-  {(a, b) | M a b ∧ (a, b) ∈ R ×ˢ C}
-
 
 def rectPtsetq (n q i j :ℕ) := rectPtset n (q * i) (q * (i+1)) (q * j) (q * (j+1))
 
 open scoped Classical in noncomputable
 def rectPtsetqMatrix {n:ℕ }(M : Fin n → Fin n → Prop) (q i j :ℕ) : Finset (Fin n × Fin n) := {(a, b) | M a b ∧ (a, b) ∈ rectPtsetq n q i j}
 
-lemma card_interval {n :ℕ} (x y :ℕ) (hy: y ≤ n): #{a : Fin n | ↑a ∈ Finset.Ico x y} = #(.Ico x y) := by
-  apply Finset.card_bij (fun (a: Fin n) _ ↦ ↑a) ?hi ?i_inj ?i_surj;aesop;aesop
-  · -- ?i_surj
-    intro b hb
-    simp at hb
-    have: b < n := by omega
-    use ⟨b, this⟩
-    simp_all only [Finset.mem_Ico, mem_filter, Finset.mem_univ, and_self, exists_const]
-
-@[simp] lemma card_rectPtSet (n a₁ b₁ a₂ b₂: ℕ) (h: b₁ ≤ n ∧ b₂ ≤ n): (rectPtset n a₁ b₁ a₂ b₂).card = (b₁ -a₁ )*(b₂ - a₂) := by
-  simp only [rectPtset, card_product]
-  suffices claim: ∀x y, y ≤ n → #{a : Fin n | ↑a ∈ Finset.Ico x y} = #(.Ico x y) by aesop
-  intro x y hy
-  exact card_interval x y hy
-
-@[simp] lemma card_rectPtsetSubsetMatrix {n :ℕ }(M : Fin n → Fin n → Prop) (R C : Finset (Fin n)) :
-    #(rectPtsetSubsetMatrix M R C) ≤ #R * #C := by
-  calc
-    #(rectPtsetSubsetMatrix M R C)
-      ≤ (R ×ˢ C).card := ?_
-    _ = #R * #C := card_product R C
-  gcongr
-  simp only [rectPtsetSubsetMatrix, Prod.mk.eta, mem_product]
-  intro a ha
-  aesop
 
 @[simp] lemma card_intervalq (n q i : ℕ) (hn: 0 < n) (hq: q ∣ n) (h: i < n/q) : #{ a : Fin n | ↑a ∈ Finset.Ico (q * ↑i) (q * (↑i + 1))} = q := by
   have hy: q * (i + 1) ≤ n := by
@@ -1315,3 +1279,15 @@ theorem ex_permutation {k : ℕ } (σ : Perm (Fin k)) (n : ℕ) [NeZero n] [NeZe
         _ = (2*k^2 *n*K) * ((k-1)^2 + k + 1)  := by ring
         _ ≤ (2*k^2 *n*K) * k^2  := Nat.mul_le_mul_left (2 * k ^ 2 * n * K) this
         _ = 2*k^4 *K * n := by ring
+
+  theorem ex_perm_lb{k : ℕ } (σ : Perm (Fin k)) (n : ℕ) [NeZero n] (hk: 2 ≤ k):
+   n ≤  ex (permPattern σ) n  := by
+
+   let s : Finset (Fin k):= Finset.univ
+   have: 1 < #s := by aesop
+   rw [Finset.one_lt_card_iff] at this
+   obtain ⟨a,b,⟨_,_,h⟩⟩ := this
+
+   apply ex_ge_n_of_two_points
+   simp [permPattern,toPEquiv]
+   use a,b
