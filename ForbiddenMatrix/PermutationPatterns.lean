@@ -489,7 +489,7 @@ lemma av_perm_contract_av_perm {n k: ℕ} (q :ℕ) (σ : Perm (Fin k)) (M : Fin 
 
 
 
-private
+
 lemma density_WB {n k : ℕ} (h_n: 0 < n)(h_k: k^2 ∣ n)(M : Fin n → Fin n → Prop) {σ : Perm (Fin k)}  (M_avoid_perm: ¬ contains (permPattern σ) M):
 let q := k^2
 let B := blkMatrix M q
@@ -622,7 +622,7 @@ density WB ≤ (n/k^2)*(k*(k^2).choose k):= by
     simp only [f]
     rwa [H'] at H
 
-private
+
 lemma density_TB {n k : ℕ} (h_n: 0 < n)(h_k: k^2 ∣ n)(M : Fin n → Fin n → Prop) {σ : Perm (Fin k)} (M_avoid_perm: ¬ contains (permPattern σ) M):
 let q := k^2
 let B := blkMatrix M q
@@ -766,7 +766,7 @@ refine ⟨f',f_mono,g,g_mono,?_⟩
   rwa [H'] at H
 
 
-private
+
 lemma blk_den_SB { n : ℕ} (k : ℕ ) (M : Fin n → Fin n → Prop):
   let q := k ^ 2;
   let B := blkMatrix M q;
