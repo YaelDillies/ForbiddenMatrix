@@ -82,7 +82,7 @@ lemma  exIdentity2LB  (n : ℕ)[NeZero n]: 2*n-1 ≤ ex (identityPattern 2) n :=
     let s : Finset ℤ := Ioo (-n) (n)
     let f : ℤ → Fin n × Fin n := fun (i) ↦ (↑(i⁺) , ↑(i⁻))
     have : s = (Set.Ioo (-n) n : Set ℤ) := by aesop
-    have f_inj: InjOn f s := by simp [injOn_aux n, this]
+    have f_inj: InjOn f s := by simp [injOn_aux n, this, s, f]
     have hf : ∀ a ∈ s, f a ∈ t := by
       intro a ains
       simp [s] at ains
@@ -90,18 +90,18 @@ lemma  exIdentity2LB  (n : ℕ)[NeZero n]: 2*n-1 ≤ ex (identityPattern 2) n :=
       obtain hha | hha' := le_total a 0
       left
       have : a⁺ = 0 := by rwa [posPart_eq_zero]
-      simp [this]
+      simp [this, s, f]
       -- use ful command rw [← Fin.val_zero' n, Fin.val_inj]--, Fin.natCast_eq_zero]
       right
       have : a⁻ = 0 := by rwa [negPart_eq_zero]
-      simp [this]
+      simp [this, s, f]
     have: s.card ≤ t.card:= Finset.card_le_card_of_injOn f hf f_inj
     have: s.card = 2*n -1 := by
       simp [s]
       norm_cast
       rw [Int.toNat_ofNat]
       omega
-    have: 2*n -1 ≤ t.card := by aesop
+    have: 2*n -1 ≤ t.card := by omega
     convert this
 
 
@@ -231,7 +231,7 @@ lemma exVerticalTwoPattern (n : ℕ) [NeZero n] : ex VerticalTwoPattern n = n :=
   -- Main proof starts here --
     rw [le_ex_iff]
     use M
-    case P_nonempty => simp [VerticalTwoPattern]
+    case P_nonempty => simp [VerticalTwoPattern]; exact ⟨0, by simp⟩
 
     case proof_of_Mhasn =>
       rw [density]
@@ -264,6 +264,8 @@ lemma exVerticalTwoPattern (n : ℕ) [NeZero n] : ex VerticalTwoPattern n = n :=
       have fmono: f 0 < f 1 := by simp [hf]
       rw [prop] at fmono
       contradiction
+      exact 0
+      simp
 
   case Proof_UB =>
     classical
@@ -532,7 +534,7 @@ theorem ex_hat (n : ℕ) [NeZero n] : ex HatPattern n ≤ 3*n := by
     let i := f 1
     let j := g 0
 
-    obtain ⟨_, h_non_min_max⟩ := v2_to_M2 1 0
+    obtain ⟨_, h_non_min_max⟩ := v2_to_M2 1 0 (by simp)
     simp [min_or_max_of_row] at h_non_min_max
     obtain ⟨⟨a, ha1, ha2⟩, ⟨b, hb1, hb2⟩⟩ : (∃ a, M i a ∧ a < j) ∧ (∃ b, M i b ∧ j < b) := h_non_min_max
 

@@ -189,8 +189,8 @@ p ∈ rectPtset n (q * (↑p.1 / q)) (q * (↑p.1 / q + 1)) (q * (↑p.2 / q)) (
 
 open scoped Classical
 theorem den_eq_sum_blk_den {n:ℕ} (M : Fin n → Fin n → Prop) (q : ℕ ) [NeZero q] (h_q_div_n: q ∣ n) :
-let B := blkMatrix M q;
-density M = ∑ ⟨i, j⟩ : Fin (n/q) × Fin (n/q) with B i j, blk_den M i j := by
+    let B := blkMatrix M q;
+    density M = ∑ ⟨i, j⟩ : Fin (n/q) × Fin (n/q) with B i j, blk_den M i j := by
   let B := blkMatrix M q
   let Q := Fin (n/q) × Fin (n/q)
   let N := Fin n × Fin n
@@ -205,7 +205,7 @@ density M = ∑ ⟨i, j⟩ : Fin (n/q) × Fin (n/q) with B i j, blk_den M i j :=
     use p
     refine ⟨hp, p_to_pq⟩
   have h_sum_card:= Finset.card_eq_sum_card_fiberwise H
-  suffices claim: ∀ k, (filter (fun x ↦ f x = k) s).card = blk_den M k.1 k.2 by aesop
+  suffices claim: ∀ k, (filter (fun x ↦ f x = k) s).card = blk_den M k.1 k.2 by simpa [← claim]
   -- proof of the last claim
   intro k
   dsimp [blk_den, rectPtsetMatrix]
@@ -274,9 +274,6 @@ lemma den_submatrix_eq_sum_blk_den {n:ℕ} (M : Fin n → Fin n → Prop)  {q : 
       rw [fqa,fqb]
       refine ⟨⟨Hab,⟨?_,h_f1ij⟩⟩,Hab2⟩
       use a,b
-      refine ⟨Hab, by
-        simp [rectPtsetq]
-        exact p_to_pq' (a,b)⟩
     · intro h
       simp [blkMatrix] at h
       obtain ⟨a,⟨b,⟨⟨h1,⟨_,h2⟩⟩ ,r⟩ ⟩ ⟩ := h
@@ -310,7 +307,7 @@ lemma den_submatrix_eq_sum_blk_den {n:ℕ} (M : Fin n → Fin n → Prop)  {q : 
 
   simp at h_only_M1
   have:= den_eq_sum_blk_den M1 q h_q_div_n; simp at this
-  simp
+  simp [B1]
   conv at this =>
     conv =>
       enter [2,1,1]
@@ -946,7 +943,7 @@ lemma ex_permutation_to_dvd {k : ℕ } (σ : Perm (Fin k)) (n : ℕ)  (hkn: k ^ 
         rw [Nat.sub_lt_sub_iff_right]
         exact hkn
         exact Nat.le_of_succ_le o1
-      _ = n' := by simp
+      _ = n' := by simp [n']
   observe: 0 < k
   observe: 0 < k^2
   observe: n' ≤ n
@@ -1083,7 +1080,7 @@ lemma ex_permutation_to_dvd {k : ℕ } (σ : Perm (Fin k)) (n : ℕ)  (hkn: k ^ 
       calc
         density M2 = #s := by simp [density,s]; congr
         _ = #t := card_st
-        _ = density M' := by simp [density,t1Space_antitone];
+        _ = density M' := by simp [density, t1Space_antitone, t]
         _ ≤ ex (permPattern σ) n' := avoid_le_ex M' claim
 
     by_contra!
@@ -1224,7 +1221,7 @@ theorem ex_permutation {k : ℕ } (σ : Perm (Fin k)) (n : ℕ) [NeZero n] [NeZe
             rw [Nat.sub_lt_sub_iff_right]
             exact h_k
             exact Nat.le_of_succ_le o1
-          _ = n' := by simp
+          _ = n' := by simp [n']
       observe o3: NeZero n'
 
       have o4: n'/(k^2) < n := by

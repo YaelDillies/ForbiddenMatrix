@@ -9,11 +9,11 @@ def contains (P : α → β → Prop) (M : γ → δ → Prop) : Prop :=
 def containsB (P : α → β → Bool) (M : γ → δ → Bool) : Prop :=
   ∃ f : α → γ, StrictMono f ∧ ∃ g : β → δ, StrictMono g ∧ ∀ a b, P a b → M (f a) (g b)
 
-instance [Fintype α] [@DecidableRel α (· < ·)] [@DecidableRel γ (· < ·)] {f : α → γ} :
+instance [Fintype α] [DecidableRel (α := α) (· < ·)] [DecidableRel (α := γ) (· < ·)] {f : α → γ} :
   Decidable (StrictMono f) := inferInstanceAs (Decidable (∀ _ _, _ → _))
 
-instance {P : α → β → Bool} {M : γ → δ → Bool} [@DecidableRel α (· < ·)] [@DecidableRel β (· < ·)]
-    [@DecidableRel γ (· < ·)] [@DecidableRel δ (· < ·)]
+instance {P : α → β → Bool} {M : γ → δ → Bool} [DecidableRel (α := α) (· < ·)]
+    [DecidableRel (α := β) (· < ·)] [DecidableRel (α := γ) (· < ·)] [DecidableRel (α := δ) (· < ·)]
     [Fintype α] [Fintype β] [Fintype γ] [Fintype δ] [DecidableEq α] [DecidableEq β] :
     Decidable (containsB P M) :=
   inferInstanceAs <| Decidable <|

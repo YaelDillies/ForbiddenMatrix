@@ -28,11 +28,7 @@ def rev_all_rows (M : α → β → Prop) : α  → βᵒᵈ  → Prop :=  fun i
 --def rot_cw (M : α → β → Prop) :  β → α ᵒᵈ → Prop := (rev_all_rows ∘ tranpose) M
 def rot_cw (M : α → β → Prop) :  β → α ᵒᵈ → Prop := (rev_all_rows ∘ tranpose) M
 
-def rev_all_rows_via_list {n : ℕ} (M : α → Fin n → Prop) : α → Fin n → Prop :=
-   fun i ↦
-    let v := Mathlib.Vector.ofFn (M i)
-    let rv := v.reverse
-    fun j : Fin n ↦ rv.get j
+def rev_all_rows_via_list {n : ℕ} (M : α → Fin n → Prop) : α → Fin n → Prop := fun a i ↦ M a i.rev
 
 --def tranpose (M : α → β → Prop) : β → α  → Prop := fun x y ↦ M y x
 --#check rev_all_rows B
@@ -88,15 +84,7 @@ example : a ∘ Fin.revOrderIso ∘ toDual =  b  ∘ toDual := by
 
 
 example : A = rev_all_rows_via_list C := by
-  simp [A, C]
-  ext a b
-  rw [rev_all_rows_via_list]
-  simp [Mathlib.Vector.ofFn]
-  fin_cases a;
-  fin_cases b; simp;
-  exact trivial
-  simp [Mathlib.Vector.ofFn];
-  exact fun a ↦ a
+  ext a b; fin_cases a; fin_cases b <;> simp [A, C, rev_all_rows_via_list]
 
 -- example : HatPattern = (rot_cw ∘ rot_cw) HatPattern :=
 --example : HatPattern = (rot_cw ∘ rot_cw ∘ rot_cw ∘ rot_cw) HatPattern := by
