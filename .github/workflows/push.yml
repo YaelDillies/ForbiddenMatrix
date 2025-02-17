@@ -31,18 +31,21 @@ jobs:
     name: Build project
     steps:
       - name: Checkout project
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Copy README.md to website/index.md
         run: cp README.md website/index.md
 
-      - name: Print files to upstream
+      - name: Check ForbiddenMatrix.Mathlib only imports from Mathlib or ForbiddenMatrix.Mathlib
+        run: python3 scripts/check_mathlib_imports.py
+
+      - name: Upstreaming dashboard
         run: |
           mkdir -p website/_includes
           python3 scripts/upstreaming_dashboard.py
 
       - name: Install elan
-        run: curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain leanprover/lean4:4.0.0
+        run: curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain leanprover/lean4:4.15.0
 
       - name: Get cache
         run: ~/.elan/bin/lake exe cache get || true
@@ -50,19 +53,21 @@ jobs:
       - name: Build project
         run: ~/.elan/bin/lake build ForbiddenMatrix
 
-      - name: Cache dependencies docs
-        uses: actions/cache@v3
+      - name: File dependencies
+        run: |
+          sudo apt-get update
+          sudo apt install graphviz -y
+          ~/.elan/bin/lake exe graph website/file_deps.pdf
+
+      - name: Cache documentation
+        uses: actions/cache@v4
         with:
-          path: docbuild/.lake/build/doc
+          path: website/docs
           key: MathlibDoc-${{ hashFiles('lake-manifest.json') }}
-          restore-keys: |
-            MathlibDoc-
+          restore-keys: MathlibDoc-
 
       - name: Build documentation
-        working-directory: docbuild
-        run: |
-          ~/.elan/bin/lake exe cache get || true
-          ~/.elan/bin/lake build ForbiddenMatrix:docs
+        run: scripts/build_docs.sh
 
       # - name: Build blueprint and copy to `website/blueprint`
       #   uses: xu-cheng/texlive-action@v2
@@ -70,7 +75,6 @@ jobs:
       #     scheme: full
       #     run: |
       #       apk update
-      #       apk add --update make py3-pip git
       #       apk add --update make py3-pip git pkgconfig graphviz graphviz-dev gcc musl-dev
       #       git config --global --add safe.directory $GITHUB_WORKSPACE
       #       git config --global --add safe.directory `pwd`
@@ -82,7 +86,8 @@ jobs:
 
       - name: Copy documentation to `website/docs`
         run: |
-          mv docbuild/.lake/build/doc website/docs
+          mkdir -p website/docs
+          mv docs/build website/docs
 
       - name: Bundle dependencies
         uses: ruby/setup-ruby@v1
@@ -96,14 +101,15 @@ jobs:
         run: JEKYLL_ENV=production bundle exec jekyll build
 
       - name: Upload docs & blueprint artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: website/_site
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4
 
       - name: Make sure the cache works
         run: |
+          mkdir -p docbuild/.lake/build/doc
           mv website/docs docbuild/.lake/build/doc
