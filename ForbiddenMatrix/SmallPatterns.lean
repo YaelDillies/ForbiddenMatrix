@@ -22,8 +22,8 @@ lemma exPatternOne (n : ℕ) : ex onePattern n = 0 := by
   contrapose
   simp
   intro Mnonzero
-  simp only [density, card_eq_zero, filter_eq_empty_iff, Finset.mem_univ, true_implies, Prod.forall, not_forall,
-  not_not] at Mnonzero
+  simp only [density, card_eq_zero, filter_eq_empty_iff, Finset.mem_univ, true_implies, Prod.forall,
+    not_forall, not_not] at Mnonzero
   obtain ⟨i, j, Mij⟩ := Mnonzero
   simp [contains]
   refine ⟨fun _ ↦ i, by simp [StrictMono], ![j], by simp [StrictMono], by simp [Mij]⟩
@@ -41,23 +41,13 @@ lemma injOn_aux (n : ℕ) [NeZero n] :
 
 --set_option diagnostics true
 lemma  exIdentity2LB  (n : ℕ)[NeZero n]: 2*n-1 ≤ ex (identityPattern 2) n := by
-  --The following code is a bad style: (a lot of unnecessary casting to deal with, e.g. double-casting)
+  --The following code is a bad style: (a lot of unnecessary casting to deal with, e.g.
+  -- double-casting)
   --let  M (i j : Fin n) : Prop := i.val = 0 ∨ j.val = 0
   --Better to use this one:
   let  M (i j : Fin n) : Prop := i = (0 : Fin n) ∨ j = (0 : Fin n)
-  have : ¬contains (identityPattern 2) M := ?proof_of_M_avoids_I2
-  have : 2*n -1 ≤ density M := ?proof_of_Mhastwon--(filter (fun x ↦ M x.1 x.2 : Fin n × Fin n → Prop) univ).card +1 := ?proof_of_Mhastwon
-  -- Main proof starts here --
-  rw [le_ex_iff]
-  use M
-  -- prove that (P is non-empty)
-  case P_nonempty => simp [identityPattern]
-
-  -- It remains to prove MavI2 and Mhastwon
-  case proof_of_M_avoids_I2 =>
-    by_contra h
-    simp [contains] at h
-    obtain ⟨f, hf, g, hg, pmap⟩ := h
+  have : ¬contains (identityPattern 2) M := by
+    rintro ⟨f, hf, g, hg, pmap⟩
     simp [M, identityPattern] at pmap
     simp [StrictMono] at hf hg
     have f1g0: 0 < f 1 := by
@@ -73,11 +63,9 @@ lemma  exIdentity2LB  (n : ℕ)[NeZero n]: 2*n-1 ≤ ex (identityPattern 2) n :=
       rw [g0] at gmono
       contradiction
     specialize pmap 1
-    cases' pmap
-    aesop;aesop
-  -- Now, we prove Mhastwon
-  case proof_of_Mhastwon =>
-    let t := (filter (fun x ↦ M x.1 x.2 : Fin n × Fin n → Prop) univ)
+    aesop
+  have : 2 * n -1 ≤ density M := by
+    let t : Finset (Fin n × Fin n) := (filter (fun x ↦ M x.1 x.2 : Fin n × Fin n → Prop) univ)
     simp only [density, ge_iff_le, M]
     let s : Finset ℤ := Ioo (-n) (n)
     let f : ℤ → Fin n × Fin n := fun (i) ↦ (↑(i⁺) , ↑(i⁻))
@@ -103,6 +91,12 @@ lemma  exIdentity2LB  (n : ℕ)[NeZero n]: 2*n-1 ≤ ex (identityPattern 2) n :=
       omega
     have: 2*n -1 ≤ t.card := by omega
     convert this
+  --(filter (fun x ↦ M x.1 x.2 : Fin n × Fin n → Prop) univ).card +1 := ?proof_of_Mhastwon
+  -- Main proof starts here --
+  rw [le_ex_iff]
+  · use M
+  · -- prove that (P is non-empty)
+    case P_nonempty => simp [identityPattern]
 
 
 
@@ -177,16 +171,14 @@ lemma exIdentity2UB (n : ℕ) : ex (identityPattern 2) n ≤ 2*n-1 := by
       obtain ⟨a_fM_eq_zero, b_fM_eq_one⟩ := abeqfm
       simp [a_fM_eq_zero, b_fM_eq_one, a2leqb2]
 
-    refine ⟨fM, monof, gM, monog, by
-    intro a' b' idab
+    refine ⟨fM, monof, gM, monog, fun a' b' idab ↦ ?_⟩
     simp [identityPattern] at idab
     rw [idab]
     simp [fM, gM]
     subst b'
-    fin_cases a';simp
-    exact hmaa
-    exact hmbb
-   ⟩
+    fin_cases a'
+    · simpa using hmaa
+    · exact hmbb
   | inr hbla =>
     obtain ⟨a1leqb1, a2leqb2⟩ := hbla
     let fM : Fin 2 → Fin n := ![b.1, a.1]
@@ -212,64 +204,17 @@ lemma exIdentity2UB (n : ℕ) : ex (identityPattern 2) n ≤ 2*n-1 := by
     rw [idab]
     simp [fM, gM]
     subst b'
-    fin_cases a';simp
-    exact hmbb
-    exact hmaa
+    fin_cases a'
+    · simpa using hmbb
+    · exact hmaa
 
 theorem exIdentity2  (n : ℕ)[NeZero n]: 2*n-1 = ex (identityPattern 2) n :=
   Eq.symm (Nat.le_antisymm  (exIdentity2UB n) (exIdentity2LB n))
 
 lemma exVerticalTwoPattern (n : ℕ) [NeZero n] : ex VerticalTwoPattern n = n := by
-  have UB: ex VerticalTwoPattern n ≤ n := ?Proof_UB
-  have LB: n ≤ ex VerticalTwoPattern n := ?Proof_LB
-  exact Nat.le_antisymm UB LB
-
-  case Proof_LB =>
-    let  M (i j : Fin n) : Prop := i = (0 : Fin n)
-    have : ¬contains VerticalTwoPattern M := ?proof_of_M_avoids_VerticalTwoPattern
-    have : n ≤ density M := ?proof_of_Mhasn
-  -- Main proof starts here --
-    rw [le_ex_iff]
-    use M
-    case P_nonempty => simp [VerticalTwoPattern]; exact ⟨0, by simp⟩
-
-    case proof_of_Mhasn =>
-      rw [density]
-      simp [M]
-      let s : Finset (Fin n × Fin n) := (filter (fun x : Fin n × Fin n ↦ x.1 = 0) univ)
-      let f : ℕ → Fin n × Fin n := fun (j) ↦ ( 0 , j)
-
-      have f_inj : ∀ i < n, ∀ j < n, f i = f j → i = j := by
-        intro i hi j hj fieqfj
-        simp [f] at fieqfj
-
-        have natCast_injOn_Fin := CharP.natCast_injOn_Iio (Fin n) n -- coercion N -> Fin n is only injective on [0, n[
-        apply natCast_injOn_Fin at fieqfj; simpa;simpa;simpa
-        -- Daniel Weber said that the problem is that (5 : Fin 3) = (8 : Fin 3), so you need h1 and h2 to remove the cast.
-        -- https://leanprover.zulipchat.com/#narrow/stream/113489-new-members/topic/Casting.20Fin.20n.20to.20Nat/near/474463179
-        --apply_fun Fin.val at fieqfj
-        --rwa [Fin.val_cast_of_lt hi, Fin.val_cast_of_lt hj] at fieqfj
-
-      refine le_card_of_inj_on_range f ?_ f_inj
-      intro i hi
-      simp [f]
-
-    case proof_of_M_avoids_VerticalTwoPattern =>
-      by_contra cont
-      rw [contains, VerticalTwoPattern] at cont
-      obtain ⟨f, hf, g, hg, prop⟩ := cont
-      simp [StrictMono] at hf hg
-      simp at prop
-      specialize prop 1
-      have fmono: f 0 < f 1 := by simp [hf]
-      rw [prop] at fmono
-      contradiction
-      exact 0
-      simp
-
-  case Proof_UB =>
-    classical
-    rw [ex]
+  classical
+  refine le_antisymm ?_ ?_
+  · rw [ex]
     simp
     intro M
     contrapose
@@ -319,7 +264,7 @@ lemma exVerticalTwoPattern (n : ℕ) [NeZero n] : ex VerticalTwoPattern n = n :=
       refine⟨f, fmono, g, gmono, ?_⟩
       simp [VerticalTwoPattern]
       intro a b
-      fin_cases a;aesop;aesop
+      fin_cases a <;> aesop
     | inr ba =>
       let f := ![b.1, a.1]
       have fmono : StrictMono f := by
@@ -331,7 +276,44 @@ lemma exVerticalTwoPattern (n : ℕ) [NeZero n] : ex VerticalTwoPattern n = n :=
       refine⟨f, fmono, g, gmono, ?_⟩
       simp [VerticalTwoPattern]
       intro a b
-      fin_cases a;aesop;aesop
+      fin_cases a <;> aesop
+  · let  M (i j : Fin n) : Prop := i = (0 : Fin n)
+    have : ¬contains VerticalTwoPattern M := by
+      by_contra cont
+      rw [contains, VerticalTwoPattern] at cont
+      obtain ⟨f, hf, g, hg, prop⟩ := cont
+      simp [StrictMono] at hf hg
+      simp at prop
+      specialize prop 1
+      have fmono: f 0 < f 1 := by simp [hf]
+      rw [prop] at fmono
+      · contradiction
+      · exact 0
+      · simp
+    have : n ≤ density M := by
+      rw [density]
+      simp [M]
+      let s : Finset (Fin n × Fin n) := (filter (fun x : Fin n × Fin n ↦ x.1 = 0) univ)
+      let f : ℕ → Fin n × Fin n := fun (j) ↦ ( 0 , j)
+
+      have f_inj : ∀ i < n, ∀ j < n, f i = f j → i = j := by
+        intro i hi j hj fieqfj
+        simp [f] at fieqfj
+
+        apply CharP.natCast_injOn_Iio (Fin n) n at fieqfj; simpa;simpa;simpa
+        -- Daniel Weber said that the problem is that (5 : Fin 3) = (8 : Fin 3), so you need h1 and
+        -- h2 to remove the cast.
+        -- https://leanprover.zulipchat.com/#narrow/stream/113489-new-members/topic/Casting.20Fin.20n.20to.20Nat/near/474463179
+        --apply_fun Fin.val at fieqfj
+        --rwa [Fin.val_cast_of_lt hi, Fin.val_cast_of_lt hj] at fieqfj
+
+      refine le_card_of_inj_on_range f ?_ f_inj
+      intro i hi
+      simp [f]
+  -- Main proof starts here --
+    rw [le_ex_iff]
+    · use M
+    case P_nonempty => simp [VerticalTwoPattern]; exact ⟨0, by simp⟩
 
 -- Finset.card_disjiUnion
 -- open BigOperators
@@ -343,20 +325,24 @@ example (n :ℕ) : ex Horizontal2Pattern n ≤ n := by
   let M1 (i j : Fin n) : Prop := M i j ∧  (Pred_min_Ofrow i j)
   let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (Pred_min_Ofrow i j)
 
-  have dm1: density M1 ≤ n:= ?proof_dm1
-  have M2_avoids_trivial : ¬ contains onePattern M2 := ?proof_M2_av_trivial
-  have dm2: density M2 ≤ 0 := calc
-    density M2 ≤ ex onePattern n := avoid_le_ex M2 M2_avoids_trivial
-    _ = 0 := exPatternOne n
-
-  calc
-    density M = density M1 + density M2 := split_density M Pred_min_Ofrow
-    _        ≤ n + density M2      := by simp only [dm1, add_le_add_iff_right]
-    _        ≤ n + 0              := by simp only [dm2, add_le_add_iff_left]
-    _        ≤ n                  := by omega
-
-  ---
-  case proof_M2_av_trivial =>
+  have dm1: density M1 ≤ n:= by
+    have h_row_one i : row_density M1 i ≤ 1 := by
+      by_contra H
+      simp [row_density, one_lt_card_iff] at H
+      obtain ⟨a, ha, b, hb, aneqb⟩ := H
+      simp [M1, Pred_min_Ofrow] at ha
+      simp [M1, Pred_min_Ofrow] at hb
+      have : a = b := by
+        refine Fin.le_antisymm ?h1 ?h2
+        · -- a ≤ b
+          apply ha.2
+          exact hb.1
+        · -- b ≤ a
+          apply hb.2
+          exact ha.1
+      contradiction
+    simpa using density_by_rows_ub M1 h_row_one
+  have M2_avoids_trivial : ¬ contains onePattern M2 := by
     by_contra contains_one
     simp [contains] at contains_one
     obtain ⟨f, hf, g, hg, prop⟩ := contains_one
@@ -381,63 +367,42 @@ example (n :ℕ) : ex Horizontal2Pattern n ≤ n := by
         fin_cases a ; fin_cases b <;> all_goals (aesop)
       ⟩
     contradiction
+  have dm2: density M2 ≤ 0 := calc
+    density M2 ≤ ex onePattern n := avoid_le_ex M2 M2_avoids_trivial
+    _ = 0 := exPatternOne n
 
-  case proof_dm1 =>
-    have h_row_one: ∀ i, row_density M1 i ≤ 1 := by
-      intro i
-      by_contra H
-      simp [row_density, one_lt_card_iff] at H
-      obtain ⟨a, ha, b, hb, aneqb⟩ := H
-      simp [M1, Pred_min_Ofrow] at ha
-      simp [M1, Pred_min_Ofrow] at hb
-      have : a = b := by
-        refine Fin.le_antisymm ?h1 ?h2
-        · -- a ≤ b
-          apply ha.2
-          exact hb.1
-        · -- b ≤ a
-          apply hb.2
-          exact ha.1
-      contradiction
-
-    have:= density_by_rows_ub M1 h_row_one; simp at this
-    exact this
+  calc
+    density M = density M1 + density M2 := split_density M Pred_min_Ofrow
+    _        ≤ n + density M2      := by simp only [dm1, add_le_add_iff_right]
+    _        ≤ n + 0              := by simp only [dm2, add_le_add_iff_left]
+    _        ≤ n                  := by omega
 
 theorem ex_horizontal (k n: ℕ) : ex (horizontalkPattern k) n ≤ n*(k-1) := by
   classical
   simp only [ex, Finset.sup_le_iff, mem_filter, Finset.mem_univ, true_and]
   intro M NoHPk
-  have h_row_k: ∀ i, row_density M i ≤ k-1 := ?proof_h_row_k
-  exact density_by_rows_ub M h_row_k
-
-  case proof_h_row_k =>
-    intro i
-    by_contra H
-    simp at H
-    simp [row_density] at H
-    let s : Finset (Fin n) := {j | M i j}
-    have h: k ≤ s.card := by simp [s]; omega
-    let g := s.orderEmbOfCardLe h
-    have: contains (horizontalkPattern k) M := ?proof_HPk
-    contradiction
-    case proof_HPk =>
-      simp [contains]
-      refine ⟨![i], by simp [StrictMono], g, by simp [StrictMono, OrderEmbedding.lt_iff_lt], ?EmbedPatttern⟩
-      · -- Proof of Embed Pattern
-        simp [horizontalkPattern]
-        intro j
-        have: g j ∈ s := s.orderEmbOfCardLe_mem h j
-        simp [s] at this
-        exact this
+  refine density_by_rows_ub M fun i ↦ ?_
+  contrapose! NoHPk
+  simp [row_density] at NoHPk
+  let s : Finset (Fin n) := {j | M i j}
+  have h: k ≤ s.card := by simp [s]; omega
+  let g := s.orderEmbOfCardLe h
+  simp [contains]
+  refine ⟨![i], by simp [StrictMono], g, by simp [StrictMono, OrderEmbedding.lt_iff_lt], ?_⟩
+  · -- Proof of Embed Pattern
+    simp [horizontalkPattern]
+    intro j
+    have: g j ∈ s := s.orderEmbOfCardLe_mem h j
+    simp [s] at this
+    exact this
 
 theorem ex_vertical (k n : ℕ) : ex (verticalkPattern k) n ≤ n*(k-1) := by
   classical
-  have: ex (verticalkPattern k) n ≤ ex ( tranpose (verticalkPattern k)) n := ?exv
-
   calc
-    ex (verticalkPattern k) n ≤ ex ( tranpose (verticalkPattern k)) n := this
-    _                        = ex ( horizontalkPattern k) n := by rfl
-    _                        ≤ n*(k-1) := ex_horizontal k n
+    ex (verticalkPattern k) n
+    _ ≤ ex ( tranpose (verticalkPattern k)) n := ?exv
+    _ = ex ( horizontalkPattern k) n := by rfl
+    _ ≤ n*(k-1) := ex_horizontal k n
 
   case exv =>
     simp [ex]
@@ -462,7 +427,7 @@ theorem ex_vertical (k n : ℕ) : ex (verticalkPattern k) n ≤ n*(k-1) := by
       _        ≤ ex (tranpose (verticalkPattern k)) n := (avoid_le_ex M' hM')
 
 
-theorem ex_hat (n : ℕ) [NeZero n] : ex HatPattern n ≤ 3*n := by
+theorem ex_hat (n : ℕ) [NeZero n] : ex HatPattern n ≤ 3 * n := by
   classical
   simp [ex]
   intro M noHat
@@ -471,25 +436,7 @@ theorem ex_hat (n : ℕ) [NeZero n] : ex HatPattern n ≤ 3*n := by
   let M1 (i j : Fin n) : Prop := M i j ∧  (min_or_max_of_row i j)
   let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (min_or_max_of_row i j)
 
-  have M1_avoids_H3 : ¬ contains (horizontalkPattern 3) M1  := ?proof_M1_avoids_H3
-  have M2_avoids_V2 : ¬ contains VerticalTwoPattern M2      := ?proof_M2_avoids_V2
-
-  have dm1: density M1 ≤ n*2 := calc
-     density M1 ≤ ex  (horizontalkPattern 3) n := avoid_le_ex M1 M1_avoids_H3
-     _         ≤ n*2                         := ex_horizontal 3 n
-
-  have dm2: density M2 ≤ n := calc
-    density M2 ≤ ex VerticalTwoPattern n := avoid_le_ex M2 M2_avoids_V2
-    _         = n                      := exVerticalTwoPattern  n
-
-  calc
-    density M = density M1 + density M2 := split_density M min_or_max_of_row
-    _        ≤ n*2 + density M2      := by simp [dm1]
-    _        ≤ n*2 + n              := by simp [dm2]
-    _        ≤ 3*n                  := by omega
-
-  --
-  case proof_M1_avoids_H3 =>
+  have M1_avoids_H3 : ¬ contains (horizontalkPattern 3) M1  := by
     by_contra containsH3
     simp [contains] at containsH3
     obtain ⟨f, _, g, g_mono, prop⟩ :
@@ -514,8 +461,7 @@ theorem ex_hat (n : ℕ) [NeZero n] : ex HatPattern n ≤ 3*n := by
       have: g 2 ≤ g 1 := by aesop (add simp g1_max)
       have: g 1 < g 2 := by aesop (add simp g_mono)
       omega
-
-  case proof_M2_avoids_V2 =>
+  have M2_avoids_V2 : ¬ contains VerticalTwoPattern M2 := by
     by_contra containsV2
     simp [contains] at containsV2
     obtain ⟨f, hf, g, _, v2_to_M2⟩ :
@@ -526,17 +472,12 @@ theorem ex_hat (n : ℕ) [NeZero n] : ex HatPattern n ≤ 3*n := by
       := containsV2
     simp [VerticalTwoPattern, M2] at v2_to_M2
 
-    -- v2_to_M2:
-    -- M2  g(0)
-    -- f(0) 1
-    -- f(1) 1
-
     let i := f 1
     let j := g 0
 
     obtain ⟨_, h_non_min_max⟩ := v2_to_M2 1 0 (by simp)
     simp [min_or_max_of_row] at h_non_min_max
-    obtain ⟨⟨a, ha1, ha2⟩, ⟨b, hb1, hb2⟩⟩ : (∃ a, M i a ∧ a < j) ∧ (∃ b, M i b ∧ j < b) := h_non_min_max
+    obtain ⟨⟨a, ha1, ha2⟩, b, hb1, hb2⟩ := h_non_min_max
 
     --  M   a j b
     -- f(0)    1
@@ -555,3 +496,23 @@ theorem ex_hat (n : ℕ) [NeZero n] : ex HatPattern n ≤ 3*n := by
         fin_cases x <;> fin_cases y <;> all_goals (aesop (add simp HatPattern))
       ⟩
     contradiction
+
+  have dm1 : density M1 ≤ n * 2 := calc
+     density M1 ≤ ex  (horizontalkPattern 3) n := avoid_le_ex M1 M1_avoids_H3
+     _         ≤ n * 2                         := ex_horizontal 3 n
+
+  have dm2 : density M2 ≤ n := calc
+    density M2 ≤ ex VerticalTwoPattern n := avoid_le_ex M2 M2_avoids_V2
+    _         = n                      := exVerticalTwoPattern  n
+
+  calc
+    density M
+    _ = density M1 + density M2 := split_density M min_or_max_of_row
+    _ ≤ n * 2 + density M2      := by simp [dm1]
+    _ ≤ n * 2 + n               := by simp [dm2]
+    _ ≤ 3 * n                   := by omega
+
+    -- v2_to_M2:
+    -- M2  g(0)
+    -- f(0) 1
+    -- f(1) 1

@@ -58,12 +58,16 @@ def PatternOneB : Fin 1 → Fin 1 → Bool := fun _ : Fin 1 => fun _ : Fin 1 => 
 
 --variable {α : Type*} [Preorder α]
 --open scoped Classical in noncomputable
---def permPatternFin {k:ℕ}(σ : Equiv.Perm (Fin k)) := Equiv.Perm.permMatrix (Fin 2) σ
+--def permPatternFin {k : ℕ} (σ : Equiv.Perm (Fin k)) := Equiv.Perm.permMatrix (Fin 2) σ
 
 --def f : Fin 3 → Fin 3 := ![0, 2, 1 : Fin 3]
 
-def permPatternFin {k:ℕ}(σ : Equiv.Perm (Fin k)) (i j : Fin k): Fin 2 := (Equiv.Perm.permMatrix (Fin 2) σ) i j
-def permPattern {k:ℕ}(σ : Equiv.Perm (Fin k)) (i j : Fin k): Prop := (Equiv.Perm.permMatrix ℕ σ) i j = 1
+def permPatternFin {k : ℕ} (σ : Equiv.Perm (Fin k)) (i j : Fin k): Fin 2 :=
+  Equiv.Perm.permMatrix (Fin 2) σ i j
+
+def permPattern {k : ℕ} (σ : Equiv.Perm (Fin k)) (i j : Fin k): Prop :=
+  Equiv.Perm.permMatrix ℕ σ i j = 1
+
 --def identity (k :ℕ) (i : Fin k) : Fin k := i
 --#eval  (One (Fin 2))
 --def f : Fin 2 → Fin 2 := ![0, 1]

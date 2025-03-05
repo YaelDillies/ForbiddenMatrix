@@ -114,7 +114,8 @@ theorem split_density_to_rows {n : ℕ} (M : Fin n → Fin n → Prop) :
       simp
       rw [ha.2] at ha
       exact ha.1
-    let i_inj : ∀ (a₁ : Fin n × Fin n) (ha₁ : a₁ ∈ s) (a₂ : Fin n × Fin n) (ha₂ : a₂ ∈ s), i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂ := by
+    let i_inj : ∀ (a₁ : Fin n × Fin n) (ha₁ : a₁ ∈ s) (a₂ : Fin n × Fin n) (ha₂ : a₂ ∈ s),
+      i a₁ ha₁ = i a₂ ha₂ → a₁ = a₂ := by
       intro a1 ha1 a2 ha2 H
       simp [i] at H
       simp [s] at ha1 ha2
@@ -172,11 +173,14 @@ def rectPtsetMatrix {n : ℕ }(M : Fin n → Fin n → Prop) (a₁ b₁ a₂ b�
   {(a, b) | M a b ∧ (a, b) ∈ (rectPtset n a₁ b₁ a₂ b₂)}
 
 open scoped Classical in noncomputable
-def rectPtsetSubsetMatrix {n : ℕ }(M : Fin n → Fin n → Prop) (R C : Finset (Fin n)) : Finset (Fin n × Fin n) :=
-  {(a, b) | M a b ∧ (a, b) ∈ R ×ˢ C}
+def rectPtsetSubsetMatrix {n : ℕ }(M : Fin n → Fin n → Prop) (R C : Finset (Fin n)) :
+    Finset (Fin n × Fin n) := {(a, b) | M a b ∧ (a, b) ∈ R ×ˢ C}
 
-lemma card_interval {n : ℕ} (x y : ℕ) (hy: y ≤ n) : #{a : Fin n | ↑a ∈ Finset.Ico x y} = #(.Ico x y) := by
-  apply Finset.card_bij (fun (a: Fin n) _ ↦ ↑a) ?hi ?i_inj ?i_surj;aesop;aesop
+lemma card_interval {n : ℕ} (x y : ℕ) (hy: y ≤ n) :
+    #{a : Fin n | ↑a ∈ Finset.Ico x y} = #(.Ico x y) := by
+  apply Finset.card_bij (fun (a: Fin n) _ ↦ ↑a) ?hi ?i_inj ?i_surj
+  · aesop
+  · aesop
   · -- ?i_surj
     intro b hb
     simp at hb
@@ -185,7 +189,8 @@ lemma card_interval {n : ℕ} (x y : ℕ) (hy: y ≤ n) : #{a : Fin n | ↑a ∈
     simp_all only [Finset.mem_Ico, mem_filter, Finset.mem_univ, and_self, exists_const]
 
 
-@[simp] lemma card_rectPtSet (n a₁ b₁ a₂ b₂: ℕ) (h: b₁ ≤ n ∧ b₂ ≤ n) : (rectPtset n a₁ b₁ a₂ b₂).card = (b₁ -a₁)*(b₂ - a₂) := by
+@[simp] lemma card_rectPtSet (n a₁ b₁ a₂ b₂ : ℕ) (h : b₁ ≤ n ∧ b₂ ≤ n) :
+    #(rectPtset n a₁ b₁ a₂ b₂) = (b₁ - a₁) * (b₂ - a₂) := by
   simp only [rectPtset, card_product]
   suffices claim: ∀x y, y ≤ n → #{a : Fin n | ↑a ∈ Finset.Ico x y} = #(.Ico x y) by aesop
   intro x y hy
@@ -227,23 +232,12 @@ theorem den_all1_matrix_row_subset {n : ℕ} (I : Finset (Fin n)) :
   have:= den_all1_matrix_subset I J
   simp at this
   rw [mul_comm]
-  convert this
-  aesop
-  aesop
-
+  convert this <;> aesop
 
 theorem den_all1_matrix_col_subset {n : ℕ} (I : Finset (Fin n)) :
-  let M (i j : Fin n) : Prop := (i, j) ∈ Finset.univ ×ˢ I
-  density M = n * #I := by
-
-  extract_lets M
-  let J : Finset (Fin n) := Finset.univ
-  have:= den_all1_matrix_subset J I
-  simp at this
-  convert this
-  aesop
-  aesop
-
+    let M (i j : Fin n) : Prop := (i, j) ∈ Finset.univ ×ˢ I
+    density M = n * #I := by
+  simpa using den_all1_matrix_subset .univ I
 
 theorem den_all1_matrix_column_interval {n : ℕ} (a b : Fin n) :
   let I := ({ x | ↑x ∈ Finset.Icc a.1 b.1} : Finset (Fin n))
@@ -299,12 +293,11 @@ theorem den_all1_matrix_single_col  {n : ℕ} (x : Fin n) :
   convert this
   aesop
 
-theorem ex_ge_n_of_two_points (P : α → β → Prop) (n : ℕ) [NeZero n](h_P2: ∃ a b : (α × β), P a.1 a.2 ∧ P b.1 b.2 ∧ a ≠ b) : n ≤ ex P n := by
-
-  rcases h_P2 with ⟨p1,p2,hp1,hp2,hpneq⟩
-  obtain _ | n_pos := le_or_lt n 0
-  aesop
-
+theorem ex_ge_n_of_two_points (P : α → β → Prop) (n : ℕ) [NeZero n]
+    (h_P2 : ∃ a b : (α × β), P a.1 a.2 ∧ P b.1 b.2 ∧ a ≠ b) : n ≤ ex P n := by
+  rcases h_P2 with ⟨p1, p2, hp1, hp2, hpneq⟩
+  obtain rfl | n_pos := eq_zero_or_pos n
+  · simp
   obtain same_row | same_col : p1.1 = p2.1 ∨  p1.1 ≠ p2.1 := eq_or_ne p1.1 p2.1
   · -- same_row
     let V (i j: Fin n) : Prop := ↑j = 0
