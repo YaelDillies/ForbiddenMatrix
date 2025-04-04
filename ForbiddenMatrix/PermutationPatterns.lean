@@ -441,10 +441,8 @@ lemma av_perm_contract_av_perm {n k: ℕ} (q :ℕ) (σ : Perm (Fin k)) (M : Fin 
     · rename_i q
       simp_all
       calc
-        f' a <  (q + 1) * (↑(f a) + 1) := ca_ub
-        _  ≤ (q + 1) * ↑(f b) := by
-            simp_arith
-            exact hf hab
+        f' a < (q + 1) * (f a + 1) := ca_ub
+        _  ≤ (q + 1) * f b := by simpa using hf hab
         _  ≤ f' b := cb_lb
 
   --           . . g (i) . .  |    . . g (σ i) . .
@@ -472,9 +470,7 @@ lemma av_perm_contract_av_perm {n k: ℕ} (q :ℕ) (σ : Perm (Fin k)) (M : Fin 
     · rename_i q
       calc
         g' a < (q + 1) * (↑(g a) + 1) := by simp_all [g']
-        _  ≤ (q + 1) * (↑(g b) ) := by
-            simp_arith
-            exact hg hab
+        _  ≤ (q + 1) * g b := by simpa using hg hab
         _  ≤ g' b := by simp_all [g']
 
   have : contains (permPattern σ) M := by
