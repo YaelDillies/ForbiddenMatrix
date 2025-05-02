@@ -1,4 +1,5 @@
 name = "ForbiddenMatrix"
+keywords = ["math", "combinatorics", "extremal-combinatorics", "forbidden-matrix-theory"]
 defaultTargets = ["ForbiddenMatrix"]
 
 [leanOptions]
