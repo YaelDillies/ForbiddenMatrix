@@ -1,7 +1,6 @@
 import Mathlib.LinearAlgebra.Matrix.Permutation
 
 set_option linter.unusedTactic false
-set_option maxHeartbeats 800000
 
 open Finset Set
 open OrderDual
