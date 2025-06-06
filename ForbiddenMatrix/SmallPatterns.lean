@@ -84,11 +84,7 @@ lemma  exIdentity2LB  (n : ℕ)[NeZero n]: 2*n-1 ≤ ex (identityPattern 2) n :=
       have : a⁻ = 0 := by rwa [negPart_eq_zero]
       simp [this, s, f]
     have: s.card ≤ t.card:= Finset.card_le_card_of_injOn f hf f_inj
-    have: s.card = 2*n -1 := by
-      simp [s]
-      norm_cast
-      rw [Int.toNat_ofNat]
-      omega
+    have: s.card = 2*n -1 := by simp [s]; omega
     have: 2*n -1 ≤ t.card := by omega
     convert this
   --(filter (fun x ↦ M x.1 x.2 : Fin n × Fin n → Prop) univ).card +1 := ?proof_of_Mhastwon
@@ -118,7 +114,6 @@ lemma exIdentity2UB (n : ℕ) : ex (identityPattern 2) n ≤ 2*n-1 := by
     cases n
     · contradiction
     simp
-    rw [← Nat.cast_add_one, ← Nat.cast_add, Int.toNat_ofNat]
     omega
   let k := 1
 
@@ -129,7 +124,6 @@ lemma exIdentity2UB (n : ℕ) : ex (identityPattern 2) n ≤ 2*n-1 := by
     cases n
     · contradiction
     simp
-    rw [← Nat.cast_add_one, ← Nat.cast_add, Int.toNat_ofNat]
     omega
 
   obtain ⟨y, hy, hy'⟩ := exists_lt_card_fiber_of_mul_lt_card_of_maps_to hf hn

@@ -293,73 +293,18 @@ theorem den_all1_matrix_single_col  {n : ℕ} (x : Fin n) :
   convert this
   aesop
 
-theorem ex_ge_n_of_two_points (P : α → β → Prop) (n : ℕ) [NeZero n]
-    (h_P2 : ∃ a b : (α × β), P a.1 a.2 ∧ P b.1 b.2 ∧ a ≠ b) : n ≤ ex P n := by
-  rcases h_P2 with ⟨p1, p2, hp1, hp2, hpneq⟩
+theorem le_ex_self_of_two_points (P : α → β → Prop) (n : ℕ) [NeZero n]
+    (hP : ∃ x y : (α × β), P x.1 x.2 ∧ P y.1 y.2 ∧ x ≠ y) : n ≤ ex P n := by
   obtain rfl | n_pos := eq_zero_or_pos n
   · simp
-  obtain same_row | same_col : p1.1 = p2.1 ∨  p1.1 ≠ p2.1 := eq_or_ne p1.1 p2.1
-  · -- same_row
-    let V (i j: Fin n) : Prop := ↑j = 0
-    observe : density V = n
-    observe denV: n ≤ density V
-
-    suffices ¬ contains P V by
-      rw [le_ex_iff]
-      use V
-      aesop
-
-    simp [contains,V,same_row]
-    intros _ _ g gm
-    have hneq: p1.2 ≠ p2.2 := by aesop
-
-    wlog h: p1.2 < p2.2 generalizing p1 p2
-    · -- justification of wlog
-      have:= this p2 p1
-      push_neg at h
-      observe h: p2.2 < p1.2
-      aesop
-    -- proceed to the proof
-    use p2.1, p2.2
-    refine ⟨hp2, ?_⟩
-    simp [StrictMono] at gm
-    observe: g p1.2 < g p2.2
-    observe: 0 ≤ g p1.2
-    observe: 0 < g p2.2
-    observe: g p2.2 ≠ 0
-    exact this
-
-  · -- same column
-    let H (i j: Fin n) : Prop := i = ↑0
-    observe : density H = n
-    observe denH: n ≤ density H
-
-    suffices ¬ contains P H by
-      rw [le_ex_iff]
-      use H
-      aesop
-
-    simp [contains,H]
-    intros f fm _ _
-    have: p1.1 ≠ p2.1 := by aesop
-
-    wlog h: p1.1 < p2.1 generalizing p1 p2
-    · -- justification of wlog
-      have:= this p2 p1
-      push_neg at h
-      observe h: p2.1 < p1.1
-      aesop
-
-    use p2.1
-    constructor
-    · use p2.2
-    · simp [StrictMono] at fm
-      observe: f p1.1 < f p2.1
-      observe: 0 ≤ f p1.1
-      observe: 0 < f p2.1
-      observe: f p2.1 ≠ 0
-      exact this
-
+  simp only [ne_eq, Prod.ext_iff, not_and_or] at hP
+  obtain ⟨⟨a₁, b₁⟩, ⟨a₂, b₂⟩, h₁, h₂, ha | hb⟩ := hP
+  · refine (le_ex_iff _ ⟨_, _, h₁⟩).2 ⟨fun i j ↦ i = 0, ?_, by simp [den_all1_matrix_single_row]⟩
+    rintro ⟨f, hf, g, hg, hfg⟩
+    exact ha <| hf.injective <| (hfg _ _ h₁).trans (hfg _ _ h₂).symm
+  · refine (le_ex_iff _ ⟨_, _, h₁⟩).2 ⟨fun i j ↦ j = 0, ?_, by simp [den_all1_matrix_single_col]⟩
+    rintro ⟨f, hf, g, hg, hfg⟩
+    exact hb <| hg.injective <| (hfg _ _ h₁).trans (hfg _ _ h₂).symm
 
 lemma exists_av_and_ex_eq {n : ℕ} {P : α → β → Prop} (P_nonempty : ∃ a b, P a b) :
     ∃ M : Fin n → Fin n → Prop, ¬ contains P M ∧ ex P n = density M := by

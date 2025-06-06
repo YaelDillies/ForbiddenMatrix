@@ -36,16 +36,9 @@ theorem ex_identity (k n : ℕ) [NeZero n] : ex (identityPattern k) n ≤ (2 * n
   obtain ⟨p, hp, hp'⟩ : ∃ p ∈ t, k - 1 < #{x ∈ s | f x = p} := by
     apply exists_lt_card_fiber_of_mul_lt_card_of_maps_to
     · simp [s, f, t]; omega;
-    · simp [s, t]
-      cases n
-      · contradiction
-      simp_all
-      rw [← Nat.cast_add_one, ← Nat.cast_add, Int.toNat_ofNat]
-      rename_i n _
-      have : (n + 1 + n) = (2 * (n + 1) - 1) := by omega
-      rw [this]
-      omega
-
+    convert M_large_density
+    simp [s, t]
+    omega
   let set_points_to_p : Finset (Fin n × Fin n) := (filter (fun x ↦ f x = p) s)
   let set_points_to_p_col : Finset (Fin n) := { x.2 | x ∈ set_points_to_p}
 
@@ -1306,6 +1299,6 @@ theorem ex_perm_lb{k : ℕ} (σ : Perm (Fin k)) (n : ℕ) [NeZero n] (hk: 2 ≤ 
   rw [Finset.one_lt_card] at this
   obtain ⟨a,_,b,_,_⟩ := this
 
-  apply ex_ge_n_of_two_points
+  apply le_ex_self_of_two_points
   simp [permPattern,toPEquiv]
   use a,b
