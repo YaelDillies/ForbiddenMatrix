@@ -70,7 +70,7 @@ lemma empty_matrix_av_all_patterns (n : ℕ) (P : α → β → Prop) (P_nonempt
 lemma ex_le_sq {P : α → β → Prop} (n : ℕ) : ex P n ≤ n ^ 2 := by
   simpa [ex, density, sq] using fun M _ ↦ Finset.card_le_univ (α := Fin n × Fin n) _
 
-@[simp] lemma ex_of_zero (P : α → β → Prop) {n : ℕ} (h : n = 0) : ex P n = 0 := by simp [ex];  aesop
+@[simp] lemma ex_of_zero (P : α → β → Prop) {n : ℕ} (h : n = 0) : ex P n = 0 := by simp [ex]; aesop
 
 lemma avoid_le_ex {n : ℕ} {P : α → β → Prop} (M : Fin n → Fin n → Prop) (AvoidP : ¬ contains P M) :
     density M ≤ ex P n := by
@@ -252,7 +252,7 @@ theorem den_all1_matrix_single_row {n : ℕ} (x : Fin n) :
   extract_lets M
   have := den_all1_matrix_row_interval x x
   simp [density] at this
-  simp [density,M]
+  simp [density, M]
   convert this
   aesop
 
@@ -263,7 +263,7 @@ theorem den_all1_matrix_single_col  {n : ℕ} (x : Fin n) :
   extract_lets M
   have := den_all1_matrix_column_interval x x
   simp [density] at this
-  simp [density,M]
+  simp [density, M]
   convert this
   aesop
 
@@ -288,11 +288,11 @@ lemma exists_av_and_ex_eq {n : ℕ} {P : α → β → Prop} (P_nonempty : ∃ a
 
 --#eval sup {j | false} id
 theorem split_density {n : ℕ} (M : Fin n → Fin n → Prop) (Pred : Fin n → Fin n → Prop) :
-let M1 (i j : Fin n) : Prop := M i j ∧   (Pred i j);
+let M1 (i j : Fin n) : Prop := M i j ∧  (Pred i j);
 let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (Pred i j);
 density M = density M1 + density M2 := by
   classical
-  let M1 (i j : Fin n) : Prop := M i j ∧   (Pred i j);
+  let M1 (i j : Fin n) : Prop := M i j ∧  (Pred i j);
   let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (Pred i j);
   let s1 : Finset (Fin n × Fin n) := {(i, j) | M1 i j}
   let s2 : Finset (Fin n × Fin n) := {(i, j) | M2 i j}

@@ -316,7 +316,7 @@ example (n :ℕ) : ex Horizontal2Pattern n ≤ n := by
   simp [ex]
   intro M noH2P
   let Pred_min_Ofrow := fun i j ↦ ∀ j', M i j' → j ≤ j'
-  let M1 (i j : Fin n) : Prop := M i j ∧  (Pred_min_Ofrow i j)
+  let M1 (i j : Fin n) : Prop := M i j ∧ (Pred_min_Ofrow i j)
   let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (Pred_min_Ofrow i j)
 
   have dm1 : density M1 ≤ n := by
@@ -427,7 +427,7 @@ theorem ex_hat (n : ℕ) [NeZero n] : ex HatPattern n ≤ 3 * n := by
   intro M noHat
 
   let min_or_max_of_row := fun i j ↦ (∀ j', M i j' → j ≤ j') ∨ (∀ j', M i j' → j' ≤ j)
-  let M1 (i j : Fin n) : Prop := M i j ∧  (min_or_max_of_row i j)
+  let M1 (i j : Fin n) : Prop := M i j ∧ (min_or_max_of_row i j)
   let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (min_or_max_of_row i j)
 
   have M1_avoids_H3 : ¬ contains (horizontalkPattern 3) M1 := by
