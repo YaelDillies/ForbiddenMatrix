@@ -40,26 +40,26 @@ lemma injOn_aux (n : ℕ) [NeZero n] :
       ⟨negPart_nonneg _, by simpa [NeZero.pos] using hz.1⟩⟩
 
 --set_option diagnostics true
-lemma  exIdentity2LB  (n : ℕ)[NeZero n]: 2*n-1 ≤ ex (identityPattern 2) n := by
-  --The following code is a bad style: (a lot of unnecessary casting to deal with, e.g.
+lemma  exIdentity2LB  (n : ℕ)[NeZero n] : 2*n-1 ≤ ex (identityPattern 2) n := by
+  --The following code is a bad style : (a lot of unnecessary casting to deal with, e.g.
   -- double-casting)
   --let  M (i j : Fin n) : Prop := i.val = 0 ∨ j.val = 0
-  --Better to use this one:
+  --Better to use this one :
   let  M (i j : Fin n) : Prop := i = (0 : Fin n) ∨ j = (0 : Fin n)
   have : ¬contains (identityPattern 2) M := by
     rintro ⟨f, hf, g, hg, pmap⟩
     simp [M, identityPattern] at pmap
     simp [StrictMono] at hf hg
-    have f1g0: 0 < f 1 := by
+    have f1g0 : 0 < f 1 := by
       by_contra f0
       simp at f0
-      have fmono: f 0 < f 1 := by simp [hf]
+      have fmono : f 0 < f 1 := by simp [hf]
       rw [f0] at fmono
       contradiction
-    have g1g0: 0 < g 1 := by
+    have g1g0 : 0 < g 1 := by
       by_contra g0
       simp at g0
-      have gmono: g 0 < g 1 := by simp [hg]
+      have gmono : g 0 < g 1 := by simp [hg]
       rw [g0] at gmono
       contradiction
     specialize pmap 1
@@ -70,7 +70,7 @@ lemma  exIdentity2LB  (n : ℕ)[NeZero n]: 2*n-1 ≤ ex (identityPattern 2) n :=
     let s : Finset ℤ := Ioo (-n) (n)
     let f : ℤ → Fin n × Fin n := fun (i) ↦ (↑(i⁺) , ↑(i⁻))
     have : s = (Set.Ioo (-n) n : Set ℤ) := by aesop
-    have f_inj: InjOn f s := by simp [injOn_aux n, this, s, f]
+    have f_inj : InjOn f s := by simp [injOn_aux n, this, s, f]
     have hf : ∀ a ∈ s, f a ∈ t := by
       intro a ains
       simp [s] at ains
@@ -83,9 +83,9 @@ lemma  exIdentity2LB  (n : ℕ)[NeZero n]: 2*n-1 ≤ ex (identityPattern 2) n :=
       right
       have : a⁻ = 0 := by rwa [negPart_eq_zero]
       simp [this, s, f]
-    have: s.card ≤ t.card:= Finset.card_le_card_of_injOn f hf f_inj
-    have: s.card = 2*n -1 := by simp [s]; omega
-    have: 2*n -1 ≤ t.card := by omega
+    have : s.card ≤ t.card := Finset.card_le_card_of_injOn f hf f_inj
+    have : s.card = 2*n -1 := by simp [s]; omega
+    have : 2*n -1 ≤ t.card := by omega
     convert this
   --(filter (fun x ↦ M x.1 x.2 : Fin n × Fin n → Prop) univ).card +1 := ?proof_of_Mhastwon
   -- Main proof starts here --
@@ -202,7 +202,7 @@ lemma exIdentity2UB (n : ℕ) : ex (identityPattern 2) n ≤ 2*n-1 := by
     · simpa using hmbb
     · exact hmaa
 
-theorem exIdentity2  (n : ℕ)[NeZero n]: 2*n-1 = ex (identityPattern 2) n :=
+theorem exIdentity2  (n : ℕ)[NeZero n] : 2*n-1 = ex (identityPattern 2) n :=
   Eq.symm (Nat.le_antisymm  (exIdentity2UB n) (exIdentity2LB n))
 
 lemma exVerticalTwoPattern (n : ℕ) [NeZero n] : ex VerticalTwoPattern n = n := by
@@ -230,13 +230,13 @@ lemma exVerticalTwoPattern (n : ℕ) [NeZero n] : ex VerticalTwoPattern n = n :=
     obtain ⟨ha, ha'⟩ := ha
     obtain ⟨hb, hb'⟩ := hb
     rw [contains]
-    have: a.2 = b.2 := by
+    have : a.2 = b.2 := by
       simp [f] at ha' hb'
       rw [← ha'] at hb'
       omega
 
     have dominance : (a.1 < b.1) ∨ (b.1 < a.1) := by
-      have: a.1 ≠ b.1 := ?_
+      have : a.1 ≠ b.1 := ?_
       aesop
       by_contra a1b1
       apply hab
@@ -279,7 +279,7 @@ lemma exVerticalTwoPattern (n : ℕ) [NeZero n] : ex VerticalTwoPattern n = n :=
       simp [StrictMono] at hf hg
       simp at prop
       specialize prop 1
-      have fmono: f 0 < f 1 := by simp [hf]
+      have fmono : f 0 < f 1 := by simp [hf]
       rw [prop] at fmono
       · contradiction
       · exact 0
@@ -297,7 +297,7 @@ lemma exVerticalTwoPattern (n : ℕ) [NeZero n] : ex VerticalTwoPattern n = n :=
         apply CharP.natCast_injOn_Iio (Fin n) n at fieqfj; simpa;simpa;simpa
         -- Daniel Weber said that the problem is that (5 : Fin 3) = (8 : Fin 3), so you need h1 and
         -- h2 to remove the cast.
-        -- https://leanprover.zulipchat.com/#narrow/stream/113489-new-members/topic/Casting.20Fin.20n.20to.20Nat/near/474463179
+        -- https ://leanprover.zulipchat.com/#narrow/stream/113489-new-members/topic/Casting.20Fin.20n.20to.20Nat/near/474463179
         --apply_fun Fin.val at fieqfj
         --rwa [Fin.val_cast_of_lt hi, Fin.val_cast_of_lt hj] at fieqfj
 
@@ -319,7 +319,7 @@ example (n :ℕ) : ex Horizontal2Pattern n ≤ n := by
   let M1 (i j : Fin n) : Prop := M i j ∧  (Pred_min_Ofrow i j)
   let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (Pred_min_Ofrow i j)
 
-  have dm1: density M1 ≤ n:= by
+  have dm1 : density M1 ≤ n := by
     have h_row_one i : row_density M1 i ≤ 1 := by
       by_contra H
       simp [row_density, one_lt_card_iff] at H
@@ -361,17 +361,17 @@ example (n :ℕ) : ex Horizontal2Pattern n ≤ n := by
         fin_cases a ; fin_cases b <;> all_goals (aesop)
       ⟩
     contradiction
-  have dm2: density M2 ≤ 0 := calc
+  have dm2 : density M2 ≤ 0 := calc
     density M2 ≤ ex onePattern n := avoid_le_ex M2 M2_avoids_trivial
     _ = 0 := exPatternOne n
 
   calc
     density M = density M1 + density M2 := split_density M Pred_min_Ofrow
-    _        ≤ n + density M2      := by simp only [dm1, add_le_add_iff_right]
-    _        ≤ n + 0              := by simp only [dm2, add_le_add_iff_left]
-    _        ≤ n                  := by omega
+    _        ≤ n + density M2   := by simp only [dm1, add_le_add_iff_right]
+    _        ≤ n + 0           := by simp only [dm2, add_le_add_iff_left]
+    _        ≤ n               := by omega
 
-theorem ex_horizontal (k n: ℕ) : ex (horizontalkPattern k) n ≤ n*(k-1) := by
+theorem ex_horizontal (k n : ℕ) : ex (horizontalkPattern k) n ≤ n*(k-1) := by
   classical
   simp only [ex, Finset.sup_le_iff, mem_filter, Finset.mem_univ, true_and]
   intro M NoHPk
@@ -379,14 +379,14 @@ theorem ex_horizontal (k n: ℕ) : ex (horizontalkPattern k) n ≤ n*(k-1) := by
   contrapose! NoHPk
   simp [row_density] at NoHPk
   let s : Finset (Fin n) := {j | M i j}
-  have h: k ≤ s.card := by simp [s]; omega
+  have h : k ≤ s.card := by simp [s]; omega
   let g := s.orderEmbOfCardLe h
   simp [contains]
   refine ⟨![i], by simp [StrictMono], g, by simp [StrictMono, OrderEmbedding.lt_iff_lt], ?_⟩
   · -- Proof of Embed Pattern
     simp [horizontalkPattern]
     intro j
-    have: g j ∈ s := s.orderEmbOfCardLe_mem h j
+    have : g j ∈ s := s.orderEmbOfCardLe_mem h j
     simp [s] at this
     exact this
 
@@ -403,10 +403,10 @@ theorem ex_vertical (k n : ℕ) : ex (verticalkPattern k) n ≤ n*(k-1) := by
     intro M hM
     rw [← ex]
     let M' := tranpose M
-    have hM': ¬ contains (tranpose (verticalkPattern k)) M' := by
+    have hM' : ¬ contains (tranpose (verticalkPattern k)) M' := by
       by_contra H
       obtain ⟨f, hf, g, hg, emb_pat_to_M'⟩ := H
-      have: contains (verticalkPattern k) M := by
+      have : contains (verticalkPattern k) M := by
         refine ⟨g, hg, f, hf, by
           intro a b
           apply emb_pat_to_M'
@@ -430,7 +430,7 @@ theorem ex_hat (n : ℕ) [NeZero n] : ex HatPattern n ≤ 3 * n := by
   let M1 (i j : Fin n) : Prop := M i j ∧  (min_or_max_of_row i j)
   let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (min_or_max_of_row i j)
 
-  have M1_avoids_H3 : ¬ contains (horizontalkPattern 3) M1  := by
+  have M1_avoids_H3 : ¬ contains (horizontalkPattern 3) M1 := by
     by_contra containsH3
     simp [contains] at containsH3
     obtain ⟨f, _, g, g_mono, prop⟩ :
@@ -438,9 +438,9 @@ theorem ex_hat (n : ℕ) [NeZero n] : ex HatPattern n ≤ 3 * n := by
       ∃ g, StrictMono g ∧
       ∀ (a : Fin 1) (b : Fin 3),
         horizontalkPattern 3 a b → M1 (f a) (g b)
-      := containsH3
+   := containsH3
     simp [horizontalkPattern] at prop
-    -- prop:
+    -- prop :
     -- M1   g(0) g(1) g(2)
     -- f(0) 1   1   1
     simp [M1] at prop
@@ -448,12 +448,12 @@ theorem ex_hat (n : ℕ) [NeZero n] : ex HatPattern n ≤ 3 * n := by
     -- since g(1) in M1, g(1) is either min or max
     cases h_min_max_g1 with
      | inl g1_min =>
-      have: g 1 ≤ g 0 := by aesop (add simp g1_min)
-      have: g 0 < g 1 := by aesop (add simp g_mono)
+      have : g 1 ≤ g 0 := by aesop (add simp g1_min)
+      have : g 0 < g 1 := by aesop (add simp g_mono)
       omega
      | inr g1_max =>
-      have: g 2 ≤ g 1 := by aesop (add simp g1_max)
-      have: g 1 < g 2 := by aesop (add simp g_mono)
+      have : g 2 ≤ g 1 := by aesop (add simp g1_max)
+      have : g 1 < g 2 := by aesop (add simp g_mono)
       omega
   have M2_avoids_V2 : ¬ contains VerticalTwoPattern M2 := by
     by_contra containsV2
@@ -463,7 +463,7 @@ theorem ex_hat (n : ℕ) [NeZero n] : ex HatPattern n ≤ 3 * n := by
       ∃ g, StrictMono g ∧
       ∀ (a : Fin 2) (b : Fin 1),
       VerticalTwoPattern a b → M2 (f a) (g b)
-      := containsV2
+   := containsV2
     simp [VerticalTwoPattern, M2] at v2_to_M2
 
     let i := f 1
@@ -477,7 +477,7 @@ theorem ex_hat (n : ℕ) [NeZero n] : ex HatPattern n ≤ 3 * n := by
     -- f(0)    1
     --  i   1    1
 
-    let g' : Fin 3 → Fin n:= ![ a, j , b]
+    let g' : Fin 3 → Fin n := ![ a, j , b]
     have monog' : StrictMono g' := by
       simp [StrictMono]
       intro x y _
@@ -493,20 +493,20 @@ theorem ex_hat (n : ℕ) [NeZero n] : ex HatPattern n ≤ 3 * n := by
 
   have dm1 : density M1 ≤ n * 2 := calc
      density M1 ≤ ex  (horizontalkPattern 3) n := avoid_le_ex M1 M1_avoids_H3
-     _         ≤ n * 2                         := ex_horizontal 3 n
+     _         ≤ n * 2                      := ex_horizontal 3 n
 
   have dm2 : density M2 ≤ n := calc
     density M2 ≤ ex VerticalTwoPattern n := avoid_le_ex M2 M2_avoids_V2
-    _         = n                      := exVerticalTwoPattern  n
+    _        = n                   := exVerticalTwoPattern  n
 
   calc
     density M
     _ = density M1 + density M2 := split_density M min_or_max_of_row
-    _ ≤ n * 2 + density M2      := by simp [dm1]
-    _ ≤ n * 2 + n               := by simp [dm2]
-    _ ≤ 3 * n                   := by omega
+    _ ≤ n * 2 + density M2   := by simp [dm1]
+    _ ≤ n * 2 + n            := by simp [dm2]
+    _ ≤ 3 * n                := by omega
 
-    -- v2_to_M2:
+    -- v2_to_M2 :
     -- M2  g(0)
     -- f(0) 1
     -- f(1) 1

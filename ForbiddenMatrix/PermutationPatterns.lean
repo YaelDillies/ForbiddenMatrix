@@ -45,11 +45,11 @@ theorem ex_identity (k n : ℕ) [NeZero n] : ex (identityPattern k) n ≤ (2 * n
   have : set_points_to_p.card = set_points_to_p_col.card := by
     apply Finset.card_bij (fun a _ ↦ a.2) ?hi ?i_inj ?i_surj; aesop;aesop;aesop
 
-  have pcardk: k ≤ set_points_to_p.card := by
+  have pcardk : k ≤ set_points_to_p.card := by
     simp [set_points_to_p]
     omega
 
-  have hcol: k ≤ set_points_to_p_col.card := by omega
+  have hcol : k ≤ set_points_to_p_col.card := by omega
 
   let g := set_points_to_p_col.orderEmbOfCardLe hcol
   let f' : Fin k → Fin n := fun i ↦ ↑( (p : ℤ) + ( (g i) : ℤ ))
@@ -97,7 +97,7 @@ theorem ex_identity (k n : ℕ) [NeZero n] : ex (identityPattern k) n ≤ (2 * n
 -- Marcus Tardos' theorem
 --
 @[simp] private
-lemma le_mul_div_add_one {n q  : ℕ} (p : Fin n) (h : 0 < q) : p < q * (p / q + 1) := by
+lemma le_mul_div_add_one {n q : ℕ} (p : Fin n) (h : 0 < q) : p < q * (p / q + 1) := by
   rw [Nat.mul_comm]
   exact Nat.lt_mul_of_div_lt (Nat.lt_add_one _) h
 
@@ -111,16 +111,16 @@ def rectPtsetqMatrix {n : ℕ} (M : Fin n → Fin n → Prop) (q i j : ℕ) : Fi
 
 @[simp] private lemma card_intervalq (n q i : ℕ) (hn : 0 < n) (hq : q ∣ n) (h : i < n / q) :
     #{a : Fin n | ↑a ∈ Finset.Ico (q * ↑i) (q * (↑i + 1))} = q := by
-  have hy: q * (i + 1) ≤ n := by
+  have hy : q * (i + 1) ≤ n := by
     observe h1 : q * (n / q - 1) = q * (n / q) - q
-    observe h2: q * (n / q) = n
+    observe h2 : q * (n / q) = n
     observe : i ≤ n / q - 1
-    observe h3: q * i ≤ q * (n / q - 1)
+    observe h3 : q * i ≤ q * (n / q - 1)
     calc -- ⊢ q * (i+1) ≤ n
       q * (i+1) = q * i + q := rfl
       _       ≤ q * (n / q -1) + q := Nat.add_le_add_right h3 q
-      _       = (q * (n / q) - q) + q := Nat.add_right_cancel_iff.mpr h1
-      _       = n := by
+      _      = (q * (n / q) - q) + q := Nat.add_right_cancel_iff.mpr h1
+      _      = n := by
         rw [h2]
         have : n - q + q = n + q - q := by
           have := Nat.le_of_dvd hn hq
@@ -129,9 +129,9 @@ def rectPtsetqMatrix {n : ℕ} (M : Fin n → Fin n → Prop) (q i j : ℕ) : Fi
         exact Eq.symm (Nat.eq_sub_of_add_eq rfl)
   calc
      #{a : Fin n | ↑a ∈ Finset.Ico (q * ↑i) (q * (↑i + 1))}
-       = #(.Ico (q * ↑i) (q * (↑i + 1))) := card_interval (q * i) (q * (i + 1)) hy
-     _ = (q * (↑i + 1)) - (q * ↑i)  := Nat.card_Ico (q * i) (q * (i + 1))
-     _ = q  := Nat.sub_eq_of_eq_add' rfl
+      = #(.Ico (q * ↑i) (q * (↑i + 1))) := card_interval (q * i) (q * (i + 1)) hy
+     _ = (q * (↑i + 1)) - (q * ↑i) := Nat.card_Ico (q * i) (q * (i + 1))
+     _ = q := Nat.sub_eq_of_eq_add' rfl
 
 @[simp] private lemma card_rectPtsetq (n q i j : ℕ) (hq : q ∣ n) (h : i < n / q ∧ j < n / q) :
     #(rectPtsetq n q i j) = q * q := by
@@ -143,10 +143,10 @@ def rectPtsetqMatrix {n : ℕ} (M : Fin n → Fin n → Prop) (q i j : ℕ) : Fi
   constructor
   · calc
       q * (i+1) ≤ q * (n / q) := Nat.mul_le_mul_left q hi
-      _      = n       := Nat.mul_div_cancel' hq
+      _     = n    := Nat.mul_div_cancel' hq
   · calc
       q * (j+1) ≤ q * (n / q) := Nat.mul_le_mul_left q hj
-      _      = n       := Nat.mul_div_cancel' hq
+      _     = n    := Nat.mul_div_cancel' hq
 
 @[simp] private lemma card_rectPtsetqMatrix {n : ℕ} (M : Fin n → Fin n → Prop) (q : ℕ) (i j : ℕ)
     (hq : q ∣ n) (h : i < n / q ∧ j < n / q) :
@@ -167,13 +167,13 @@ def blkMatrix {n : ℕ} (M : Fin n → Fin n → Prop) (q : ℕ) : Fin (n / q) �
   ∃ p : Fin n × Fin n, M p.1 p.2 ∧ p ∈ rectPtsetq n q i j
 
 open scoped Classical in noncomputable
-def blk_den {n q:ℕ } (M : Fin n → Fin n → Prop) (i j : Fin (n / q)) :
+def blk_den {n q :ℕ } (M : Fin n → Fin n → Prop) (i j : Fin (n / q)) :
   ℕ := #(rectPtsetqMatrix M q i j)
 
 @[simp] private lemma p_to_pq{n : ℕ} {p : Fin n × Fin n} {q : ℕ} [NeZero q] :
 p ∈ rectPtset n (q * (↑p.1 / q)) (q * (↑p.1 / q + 1)) (q * (↑p.2 / q)) (q * (↑p.2 / q + 1)) := by
   simp only [rectPtset, Finset.mem_Ico, mem_product, mem_filter, Finset.mem_univ, true_and]
-  have hq: 0 < q := NeZero.pos _
+  have hq : 0 < q := NeZero.pos _
   refine ⟨⟨?_1a, ?_1b⟩, ⟨?_2a, ?_2b⟩⟩
   · exact Nat.mul_div_le (↑p.1) q
   · exact le_mul_div_add_one p.1 hq
@@ -202,12 +202,12 @@ theorem den_eq_sum_blk_den {n : ℕ} (M : Fin n → Fin n → Prop) (q : ℕ) [N
     simp only [mem_filter, Finset.mem_univ, true_and, t, B, blkMatrix]
     use p
     refine ⟨hp, p_to_pq⟩
-  have h_sum_card:= Finset.card_eq_sum_card_fiberwise H
-  suffices claim: ∀ k, (filter (fun x ↦ f x = k) s).card = blk_den M k.1 k.2 by simpa [← claim]
+  have h_sum_card := Finset.card_eq_sum_card_fiberwise H
+  suffices claim : ∀ k, (filter (fun x ↦ f x = k) s).card = blk_den M k.1 k.2 by simpa [← claim]
   -- proof of the last claim
   intro k
   dsimp [blk_den, rectPtsetMatrix]
-  apply Finset.card_bij (fun (p: Fin n × Fin n) _ ↦ p ) ?hi ?i_inj ?i_surj
+  apply Finset.card_bij (fun (p : Fin n × Fin n) _ ↦ p ) ?hi ?i_inj ?i_surj
   · -- hi : ∀ (a : α) (ha : a ∈ s), i a ha ∈ t
     intro p hp
     simp only [mem_filter, Finset.mem_univ, true_and, s] at hp
@@ -242,7 +242,7 @@ private lemma f_pt_to_blk {n q : ℕ} [NeZero q] (h_q_div_n : q ∣ n) {i j : Fi
     fq a = i ∧ fq b = j := by
   extract_lets fq
   simp [rectPtsetq,rectPtset] at H
-  obtain ⟨⟨la,ua⟩,⟨lb,ub⟩ ⟩:= H
+  obtain ⟨⟨la,ua⟩,⟨lb,ub⟩ ⟩ := H
   simp [fq]
   constructor
   · suffices ↑a / q = i from by exact Fin.eq_of_val_eq this
@@ -264,7 +264,7 @@ lemma den_submatrix_eq_sum_blk_den {n : ℕ} (M : Fin n → Fin n → Prop) {q :
     density M1 = ∑ ⟨i, j⟩ : Q with B1 i j, blk_den M i j := by
 
   extract_lets B B1 fq M1 Q
-  have B1_eq_blockM1:  B1 = blkMatrix M1 q := by
+  have B1_eq_blockM1 :  B1 = blkMatrix M1 q := by
     simp! [B1,B,blkMatrix,M1]
     ext i j
     constructor
@@ -284,7 +284,7 @@ lemma den_submatrix_eq_sum_blk_den {n : ℕ} (M : Fin n → Fin n → Prop) {q :
       use a,b
 
   have h_only_M1 :
-      ∑ ⟨i, j⟩ : Q with B1 i j, blk_den M i j = ∑ ⟨i, j⟩ : Q with B1 i j, blk_den M1 i j :=  by
+      ∑ ⟨i, j⟩ : Q with B1 i j, blk_den M i j = ∑ ⟨i, j⟩ : Q with B1 i j, blk_den M1 i j := by
     suffices ∀ p : Q, B1 p.1 p.2 → (blk_den M p.1 p.2 = blk_den M1 p.1 p.2) by
       let s : Finset Q := {p : Q | B1 p.1 p.2}
       show ∑ p ∈ s, blk_den M p.1 p.2 = ∑ p ∈ s, blk_den M1 p.1 p.2
@@ -294,7 +294,7 @@ lemma den_submatrix_eq_sum_blk_den {n : ℕ} (M : Fin n → Fin n → Prop) {q :
     suffices rectPtsetqMatrix M q p.1 p.2 = rectPtsetqMatrix M1 q p.1 p.2 by rw [this]
     simp [M1]
     simp [B1,B,blkMatrix] at hp
-    obtain ⟨⟨a,b,⟨_,H⟩ ⟩,_⟩  := hp
+    obtain ⟨⟨a,b,⟨_,H⟩ ⟩,_⟩ := hp
     ext x
     simp only [rectPtsetqMatrix,  Prod.mk.eta,
       mem_filter, Finset.mem_univ, true_and, and_congr_left_iff, iff_self_and,
@@ -322,7 +322,7 @@ lemma den_submatrix_eq_sum_blk_den {n : ℕ} (M : Fin n → Fin n → Prop) {q :
 
 
 
-lemma split_density_blk {n q: ℕ} [NeZero q] (h_q_div_n: q ∣ n) (M : Fin n → Fin n → Prop)
+lemma split_density_blk {n q : ℕ} [NeZero q] (h_q_div_n : q ∣ n) (M : Fin n → Fin n → Prop)
     (f1 f2 : Fin (n / q) → Fin (n / q) → Prop) :
   let Q := Fin (n / q) × Fin (n / q)
   let f3 := fun i j ↦ (¬ f1 i j) ∧ ¬ (f2 i j)
@@ -334,7 +334,7 @@ lemma split_density_blk {n q: ℕ} [NeZero q] (h_q_div_n: q ∣ n) (M : Fin n �
   density M ≤ ∑ ⟨i, j⟩ : Q with B1 i j, blk_den M i j +
               ∑ ⟨i, j⟩ : Q with B2 i j, blk_den M i j +
               ∑ ⟨i, j⟩ : Q with N i j, blk_den M i j
-              := by
+           := by
 
   extract_lets Q f3 B B1 B2 N
 
@@ -360,8 +360,8 @@ lemma split_density_blk {n q: ℕ} [NeZero q] (h_q_div_n: q ∣ n) (M : Fin n �
   let M2' (i j : Fin n) : Prop := M1' i j ∧ P2 i j
   let M3' (i j : Fin n) : Prop := M1' i j ∧ ¬P2 i j
 
-  have h2: density M1' = density M2' + density M3' := by exact split_density M1' P2
-  have h3: density M3' = density M3 := by
+  have h2 : density M1' = density M2' + density M3' := by exact split_density M1' P2
+  have h3 : density M3' = density M3 := by
     suffices M3' = M3 by aesop
     ext i j
     simp [M3',M1']
@@ -384,9 +384,9 @@ lemma split_density_blk {n q: ℕ} [NeZero q] (h_q_div_n: q ∣ n) (M : Fin n �
 
   calc
     density M = density M1 + density M1' := split_density M P1
-    _         = density M1 + density M2' + density M3'  := by omega
-    _         ≤ density M1 + density M2' + density M3   := by omega
-    _         ≤ density M1 + density M2 + density M3  := by omega
+    _        = density M1 + density M2' + density M3' := by omega
+    _         ≤ density M1 + density M2' + density M3 := by omega
+    _         ≤ density M1 + density M2 + density M3 := by omega
 
 theorem sum_blk_den_le_mul_den_blk {n q c : ℕ} (M : Fin n → Fin n → Prop)
    (B : Fin (n / q) → Fin (n / q) → Prop) (h : ∀ i j : Fin (n / q), B i j → blk_den M i j ≤ c) :
@@ -400,8 +400,8 @@ theorem sum_blk_den_le_mul_den_blk {n q c : ℕ} (M : Fin n → Fin n → Prop)
     _ = #{ (i, j) | B i j }*c := sum_const_nat fun x ↦ congrFun rfl
     _ = c * density B := Nat.mul_comm ..
 
-lemma av_perm_contract_av_perm {n k: ℕ} (q :ℕ) (σ : Perm (Fin k)) (M : Fin n → Fin n → Prop)
-      (hM: ¬ contains (permPattern σ) M) : ¬ contains (permPattern σ) (blkMatrix M q) := by
+lemma av_perm_contract_av_perm {n k : ℕ} (q :ℕ) (σ : Perm (Fin k)) (M : Fin n → Fin n → Prop)
+      (hM : ¬ contains (permPattern σ) M) : ¬ contains (permPattern σ) (blkMatrix M q) := by
   by_contra H
   simp [contains] at H
   obtain ⟨f, hf, g, hg, h⟩ := H
@@ -421,12 +421,12 @@ lemma av_perm_contract_av_perm {n k: ℕ} (q :ℕ) (σ : Perm (Fin k)) (M : Fin 
     true_and] at h
   let f' i : Fin n := (h i).choose.1
 
-  have f'_mono: StrictMono f' := by
+  have f'_mono : StrictMono f' := by
     simp [StrictMono, f']
     simp [StrictMono] at hf
     intro a b hab
-    have spec_a:= (h a).choose_spec
-    have spec_b:= (h b).choose_spec
+    have spec_a := (h a).choose_spec
+    have spec_b := (h b).choose_spec
     obtain ⟨A, ⟨B, ca_ub⟩, C, D⟩ := spec_a
     obtain ⟨E, ⟨cb_lb, F⟩, G, H⟩ := spec_b
     cases q
@@ -447,12 +447,12 @@ lemma av_perm_contract_av_perm {n k: ℕ} (q :ℕ) (σ : Perm (Fin k)) (M : Fin 
 
   let g' : Fin k → Fin n := fun i ↦ (h (σ.invFun i)).choose.2
 
-  have g'_mono: StrictMono g' := by
+  have g'_mono : StrictMono g' := by
     simp [StrictMono]
     simp [StrictMono] at hg
     intro a b hab
-    have spec_a:= (h (σ.invFun a)).choose_spec
-    have spec_b:= (h (σ.invFun b)).choose_spec
+    have spec_a := (h (σ.invFun a)).choose_spec
+    have spec_b := (h (σ.invFun b)).choose_spec
 
     obtain ⟨A, B, C, ca_ub⟩ := spec_a
     obtain ⟨D, E, cb_lb, F⟩ := spec_b
@@ -478,16 +478,10 @@ lemma av_perm_contract_av_perm {n k: ℕ} (q :ℕ) (σ : Perm (Fin k)) (M : Fin 
       simp [f', g']
       simp_all only [f']
     ⟩
-
   contradiction
-  done
 
-
-
-
-
-lemma density_WB {n k : ℕ} (h_n: 0 < n)(h_k: k ^ 2 ∣ n)(M : Fin n → Fin n → Prop) {σ : Perm (Fin k)}
-     (M_avoid_perm : ¬ contains (permPattern σ) M) :
+lemma density_WB {n k : ℕ} (h_n : 0 < n) (h_k : k ^ 2 ∣ n) (M : Fin n → Fin n → Prop)
+     {σ : Perm (Fin k)} (M_avoid_perm : ¬ contains (permPattern σ) M) :
     let q := k ^ 2
     let B := blkMatrix M q
     let W (i j : Fin (n / q)) : Prop := k ≤ #{c | ∃ r, (r, c) ∈ rectPtsetqMatrix M q i j}
@@ -542,7 +536,7 @@ lemma density_WB {n k : ℕ} (h_n: 0 < n)(h_k: k ^ 2 ∣ n)(M : Fin n → Fin n 
         simp [WB,h]
         exact (WB_k_col i h).choose_spec.2
     · -- ⊢ #t * (k - 1) < #s
-      have tcard_eq_qck: #t = (q.choose k) := by
+      have tcard_eq_qck : #t = (q.choose k) := by
         simp [t,q]
         suffices #C = k ^ 2 by rw [this]
         dsimp [C]
@@ -565,14 +559,13 @@ lemma density_WB {n k : ℕ} (h_n: 0 < n)(h_k: k ^ 2 ∣ n)(M : Fin n → Fin n 
   simp [contains]
 
   let RB := (filter (fun i ↦ f i = S) s)
-  replace hs': k ≤ #RB := by exact Nat.le_of_pred_lt hs'
+  replace hs' : k ≤ #RB := by exact Nat.le_of_pred_lt hs'
 
   let g := S.orderEmbOfFin s_card_k
-  observe g_mono: StrictMono g
+  observe g_mono : StrictMono g
 
   let f' := RB.orderEmbOfCardLe hs'
-  have f'_prop: ∀i : Fin k, ∃ p, M p.1 p.2 ∧ (p ∈ rectPtsetq n q ↑(f' i) ↑j) ∧ p.2 = (g (σ i)) := by
-    intro i
+  have f'_prop i : ∃ p, M p.1 p.2 ∧ p ∈ rectPtsetq n q (f' i) j ∧ p.2 = g (σ i) := by
     have := RB.orderEmbOfCardLe_mem hs' i
     simp only [mem_filter, RB] at this
     obtain ⟨h1,h2⟩ := this
@@ -585,7 +578,7 @@ lemma density_WB {n k : ℕ} (h_n: 0 < n)(h_k: k ^ 2 ∣ n)(M : Fin n → Fin n 
     observe h : WB (f' i) j
     have := (WB_k_col (f' i) h).choose_spec.1
     rw [h2] at this
-    observe g_pi: g (σ i) ∈ S
+    observe g_pi : g (σ i) ∈ S
     simp only [subset_iff, mem_filter, Finset.mem_univ, true_and] at this
     obtain ⟨r,hr⟩ : ∃ r, (r, (g (σ i))) ∈ rectPtsetqMatrix M q ↑(f' i) ↑j := this g_pi
     simp only [rectPtsetqMatrix, Prod.mk.eta, mem_filter, Finset.mem_univ, true_and] at hr
@@ -594,16 +587,16 @@ lemma density_WB {n k : ℕ} (h_n: 0 < n)(h_k: k ^ 2 ∣ n)(M : Fin n → Fin n 
 
   let f := fun i : Fin k ↦ (f'_prop i).choose.1
 
-  have f_mono: StrictMono f:= by
+  have f_mono : StrictMono f := by
     simp only [StrictMono]
     intro a b hab
-    have ha:= (f'_prop a).choose_spec.2.1; simp [rectPtsetq,rectPtset] at ha
-    have hb:= (f'_prop b).choose_spec.2.1; simp [rectPtsetq,rectPtset] at hb
+    have ha := (f'_prop a).choose_spec.2.1; simp [rectPtsetq,rectPtset] at ha
+    have hb := (f'_prop b).choose_spec.2.1; simp [rectPtsetq,rectPtset] at hb
     obtain ⟨⟨X,ha_ub⟩,Y⟩ := ha
     obtain ⟨⟨hb_lb,XX⟩,YY⟩ := hb
 
-    observe: f' a < f' b
-    observe: ↑ (f' a : ℕ ) +1 ≤ ↑(f' b : ℕ )
+    observe : f' a < f' b
+    observe : ↑ (f' a : ℕ ) +1 ≤ ↑(f' b : ℕ )
 
     calc
       f a < q * (↑(f' a) + 1) := by convert ha_ub; simp [rectPtsetq,rectPtset]
@@ -621,9 +614,8 @@ lemma density_WB {n k : ℕ} (h_n: 0 < n)(h_k: k ^ 2 ∣ n)(M : Fin n → Fin n 
     simp only [f]
     rwa [H'] at H
 
-
-lemma density_TB {n k : ℕ} (h_n: 0 < n)(h_k: k ^ 2 ∣ n)(M : Fin n → Fin n → Prop) {σ : Perm (Fin k)}
-    (M_avoid_perm : ¬ contains (permPattern σ) M) :
+lemma density_TB {n k : ℕ} (h_n : 0 < n) (h_k : k ^ 2 ∣ n) (M : Fin n → Fin n → Prop)
+    {σ : Perm (Fin k)} (M_avoid_perm : ¬ contains (permPattern σ) M) :
     let q := k ^ 2
     let B := blkMatrix M q
     let T (i j : Fin (n / q)) : Prop := k ≤ #{r | ∃ c, (r, c) ∈ rectPtsetqMatrix M q i j}
@@ -680,7 +672,7 @@ lemma density_TB {n k : ℕ} (h_n: 0 < n)(h_k: k ^ 2 ∣ n)(M : Fin n → Fin n 
       · -- ⊢
         simpa [TB,h] using (TB_k_row j h).choose_spec.2
     · -- ⊢ #t * (k - 1) < #s
-      have tcard_eq_qck: #t = (q.choose k) := by
+      have tcard_eq_qck : #t = (q.choose k) := by
         simp [t,q]
         suffices #R = k ^ 2 by rw [this]
         dsimp [R]
@@ -702,10 +694,10 @@ lemma density_TB {n k : ℕ} (h_n: 0 < n)(h_k: k ^ 2 ∣ n)(M : Fin n → Fin n 
   simp [contains]
 
   let RB := (filter (fun i ↦ f i = S) s)
-  replace hs': k ≤ #RB := by exact Nat.le_of_pred_lt hs'
+  replace hs' : k ≤ #RB := by exact Nat.le_of_pred_lt hs'
 
   let f' := S.orderEmbOfFin s_card_k
-  observe f_mono: StrictMono f'
+  observe f_mono : StrictMono f'
   let g' := RB.orderEmbOfCardLe hs'
 
   have g'_prop j : ∃ p, M p.1 p.2 ∧ (p ∈ rectPtsetq n q ↑i ↑(g' j) ) ∧ p.1 = (f' (σ⁻¹ j)) := by
@@ -721,7 +713,7 @@ lemma density_TB {n k : ℕ} (h_n: 0 < n)(h_k: k ^ 2 ∣ n)(M : Fin n → Fin n 
     observe h : TB i (g' j)
     have := (TB_k_row (g' j) h).choose_spec.1
     rw [h2] at this
-    observe f'_pi: f' (σ⁻¹ j) ∈ S
+    observe f'_pi : f' (σ⁻¹ j) ∈ S
     simp only [subset_iff, mem_filter, Finset.mem_univ, true_and] at this
     obtain ⟨c,hc⟩ : ∃ c, (f' (σ⁻¹ j),c ) ∈ rectPtsetqMatrix M q ↑i  ↑(g' j) := this f'_pi
     simp only [rectPtsetqMatrix, Prod.mk.eta, mem_filter, Finset.mem_univ, true_and] at hc
@@ -730,11 +722,11 @@ lemma density_TB {n k : ℕ} (h_n: 0 < n)(h_k: k ^ 2 ∣ n)(M : Fin n → Fin n 
 
   let g := fun i : Fin k ↦ (g'_prop i).choose.2
 
-  have g_mono: StrictMono g:= by
+  have g_mono : StrictMono g := by
     simp only [StrictMono]
     intro a b hab
-    have ha:= (g'_prop a).choose_spec.2.1; simp [rectPtsetq,rectPtset] at ha
-    have hb:= (g'_prop b).choose_spec.2.1; simp [rectPtsetq,rectPtset] at hb
+    have ha := (g'_prop a).choose_spec.2.1; simp [rectPtsetq,rectPtset] at ha
+    have hb := (g'_prop b).choose_spec.2.1; simp [rectPtsetq,rectPtset] at hb
     obtain ⟨_,⟨_,ha_ub⟩ ⟩ := ha
     obtain ⟨_,⟨hb_lb,_⟩⟩ := hb
     observe : g' a < g' b
@@ -753,11 +745,11 @@ lemma density_TB {n k : ℕ} (h_n: 0 < n)(h_k: k ^ 2 ∣ n)(M : Fin n → Fin n 
     have : (∀ (a : Fin k), M (f' (σ⁻¹ a)) (g a)) ↔  (∀ (a : Fin k), M (f' a) (g (σ a))) := by
       constructor
       · intro ha i
-        observe: σ ⁻¹ (σ i) = i
+        observe : σ ⁻¹ (σ i) = i
         nth_rw 1 [← this]
         exact ha (σ i)
       · intro ha i
-        observe: σ  (σ ⁻¹ i)  = i
+        observe : σ  (σ ⁻¹ i) = i
         nth_rw 2 [← this]
         exact ha (σ ⁻¹ i)
     rewrite [← this]
@@ -784,14 +776,14 @@ lemma blk_den_SB { n : ℕ} (k : ℕ ) (M : Fin n → Fin n → Prop) :
   obtain ⟨⟨num_cols, num_rows⟩, _⟩ := hij
   let R := (filter (fun r ↦ ∃ c, (r, c) ∈ rectPtsetqMatrix M q ↑i ↑j) Finset.univ)
   let C := (filter (fun c ↦ ∃ r, (r, c) ∈ rectPtsetqMatrix M q ↑i ↑j) Finset.univ)
-  have rc: #R ≤ k - 1 := Nat.le_sub_one_of_lt num_rows
-  have cc: #C ≤ k - 1 := Nat.le_sub_one_of_lt num_cols
+  have rc : #R ≤ k - 1 := Nat.le_sub_one_of_lt num_rows
+  have cc : #C ≤ k - 1 := Nat.le_sub_one_of_lt num_cols
   suffices (rectPtsetSubsetMatrix M R C) = rectPtsetqMatrix M q ↑i ↑j by
     rw [← this]
     calc
       #(rectPtsetSubsetMatrix M R C) ≤ #R * #C := card_rectPtsetSubsetMatrix M R C
       _                                  ≤ (k - 1) * (k - 1) := Nat.mul_le_mul rc cc
-      _                                  = (k - 1) ^ 2 := Eq.symm (Nat.pow_two (k - 1))
+      _                                 = (k - 1) ^ 2 := Eq.symm (Nat.pow_two (k - 1))
   show (rectPtsetSubsetMatrix M R C) = rectPtsetqMatrix M q ↑i ↑j
   · ext
     simp only [rectPtsetSubsetMatrix, Prod.mk.eta, mem_product, mem_filter,
@@ -822,8 +814,8 @@ lemma k_pow_n_mul (k n : ℕ) (h_k_dvd_n : k ^ 2 ∣ n) :
   k ^ 4 * (n / k ^ 2 * (k * K)) = n * k ^ 3 * K := by
   qify [h_k_dvd_n]
   ring_nf
-  have : k^5 * (n / k ^ 2) = k^3 *n  := by
-    observe mul_div_eq: (k ^ 2 * (n / k ^ 2)) = n
+  have : k^5 * (n / k ^ 2) = k^3 *n := by
+    observe mul_div_eq : (k ^ 2 * (n / k ^ 2)) = n
     have : k^5 = k^3 * k ^ 2 := by
       have := Nat.pow_add k 3 2; simp at this
       exact this
@@ -840,8 +832,8 @@ lemma ex_perm_recurrence{k : ℕ} [NeZero k] (σ : Perm (Fin k)) (n : ℕ) [NeZe
     ex (permPattern σ) n
       ≤ (k - 1) ^ 2 * ex (permPattern σ) (n / k ^ 2) + 2 * n * k^3*((k ^ 2).choose k) := by
 
-  obtain ⟨M,M_av_perm,M_max⟩: ∃ M, ¬ contains (permPattern σ) M ∧ ex (permPattern σ) n = density M
-    :=  by apply exists_av_and_ex_eq;  simp [permPattern,toPEquiv]
+  obtain ⟨M,M_av_perm,M_max⟩ : ∃ M, ¬ contains (permPattern σ) M ∧ ex (permPattern σ) n = density M
+ := by apply exists_av_and_ex_eq;  simp [permPattern,toPEquiv]
 
   let q : ℕ := k ^ 2
   let B := blkMatrix M q
@@ -864,17 +856,17 @@ lemma ex_perm_recurrence{k : ℕ} [NeZero k] (σ : Perm (Fin k)) (n : ℕ) [NeZe
   obtain ⟨hn_non_zero, hk_non_zero⟩ : 0 < n ∧ 0 < k := by simp
   observe q_dvd_n : q ∣ n
 
-  have den_le_sum: density M  ≤ sum_WB + sum_TB+ sum_SB  := by
+  have den_le_sum : density M  ≤ sum_WB + sum_TB+ sum_SB := by
      convert split_density_blk q_dvd_n M W T <;> all_goals (
       simp [WB, B]
       exact And.comm
     )
 
-  have h_sum_SB: sum_SB ≤ (k - 1) ^ 2 * ex (permPattern σ) (n / k ^ 2) := by
+  have h_sum_SB : sum_SB ≤ (k - 1) ^ 2 * ex (permPattern σ) (n / k ^ 2) := by
     show ∑ ⟨i, j⟩ : Q with SB i j, blk_den M i j ≤ (k - 1) ^ 2 * ex (permPattern σ) (n / k ^ 2)
     have h1 : ∀ (i j : Fin (n / q)), SB i j → blk_den M i j ≤ (k - 1) ^ 2 := by
       convert blk_den_SB k M
-    have h2: density SB ≤ ex (permPattern σ) (n / q) := by
+    have h2 : density SB ≤ ex (permPattern σ) (n / q) := by
       suffices ¬ contains (permPattern σ) SB from avoid_le_ex SB this
       show ¬ contains (permPattern σ) SB
       · by_contra!
@@ -892,7 +884,7 @@ lemma ex_perm_recurrence{k : ℕ} [NeZero k] (σ : Perm (Fin k)) (n : ℕ) [NeZe
       _ ≤ (k - 1) ^ 2 * ex (permPattern σ) (n / q) := Nat.mul_le_mul_left ((k - 1) ^ 2) h2
   have : sum_WB ≤ n * k^3 * K := by
     show  ∑ ⟨i, j⟩ : Q with WB i j, blk_den M i j ≤ n * k^3 * (K)
-    have blk_den_trivial: ∀ (i j : Fin (n / q)), blk_den M i j ≤ k^4 := by
+    have blk_den_trivial : ∀ (i j : Fin (n / q)), blk_den M i j ≤ k^4 := by
       apply blk_den_k4
       simp_all
 
@@ -906,7 +898,7 @@ lemma ex_perm_recurrence{k : ℕ} [NeZero k] (σ : Perm (Fin k)) (n : ℕ) [NeZe
       _ = n * k^3 * (K) := k_pow_n_mul k n h_k_dvd_n
   have : sum_TB ≤ n * k^3 * K := by
     show ∑ ⟨i, j⟩ : Q with TB i j, blk_den M i j ≤ n * k^3 * (K)
-    have blk_den_trivial: ∀ (i j : Fin (n / q)), blk_den M i j ≤ k^4 := by
+    have blk_den_trivial : ∀ (i j : Fin (n / q)), blk_den M i j ≤ k^4 := by
       apply blk_den_k4
       simp_all
     observe h1 : ∀ (i j : Fin (n / q)), TB i j → blk_den M i j ≤ k^4
@@ -917,7 +909,7 @@ lemma ex_perm_recurrence{k : ℕ} [NeZero k] (σ : Perm (Fin k)) (n : ℕ) [NeZe
       _ ≤ k^4 * ((n / k ^ 2) * (k * K)) := by
         gcongr; exact density_TB hn_non_zero h_k_dvd_n M M_av_perm
       _ = n * k^3 * (K) := k_pow_n_mul k n h_k_dvd_n
-  have h_sum_WB_TB: sum_WB + sum_TB ≤ 2 * (n* k^3 * K) := by omega
+  have h_sum_WB_TB : sum_WB + sum_TB ≤ 2 * (n* k^3 * K) := by omega
 
   calc
     ex (permPattern σ) n
@@ -934,13 +926,13 @@ lemma ex_permutation_to_dvd {k : ℕ} (σ : Perm (Fin k)) (n : ℕ) (hkn : k ^ 2
     let n' : ℕ := n - n % k ^ 2
     ex (permPattern σ) n ≤ ex (permPattern σ) n' + 2 * k ^ 2 * n := by
   extract_lets n'
-  observe: 0 < n
-  observe o1: k ^ 2 ∣ n'
-  observe o_le: n' ≤ n
-  observe: 0 < k ^ 2
-  have n'_pos:  0 < n' := by
-    observe o1: n % k ^ 2 < k ^ 2
-    observe: k ^ 2 < n
+  observe : 0 < n
+  observe o1 : k ^ 2 ∣ n'
+  observe o_le : n' ≤ n
+  observe : 0 < k ^ 2
+  have n'_pos :  0 < n' := by
+    observe o1 : n % k ^ 2 < k ^ 2
+    observe : k ^ 2 < n
     calc
       0 < k ^ 2 - n%k ^ 2 := Nat.zero_lt_sub_of_lt o1
       _ < n - n%k ^ 2 := by
@@ -948,11 +940,11 @@ lemma ex_permutation_to_dvd {k : ℕ} (σ : Perm (Fin k)) (n : ℕ) (hkn : k ^ 2
         exact hkn
         exact Nat.le_of_succ_le o1
       _ = n' := by simp [n']
-  observe: 0 < k
-  observe: 0 < k ^ 2
-  observe: n' ≤ n
+  observe : 0 < k
+  observe : 0 < k ^ 2
+  observe : n' ≤ n
 
-  have h_nn': n - n' ≤ k ^ 2 := by
+  have h_nn' : n - n' ≤ k ^ 2 := by
     have h1 : n-n'= n%k ^ 2 := by
       --simp [n']
       rw [Nat.sub_eq_iff_eq_add]
@@ -961,17 +953,17 @@ lemma ex_permutation_to_dvd {k : ℕ} (σ : Perm (Fin k)) (n : ℕ) (hkn : k ^ 2
       refine Eq.symm (tsub_add_cancel_of_le ?h)
       exact Nat.mod_le n (k ^ 2)
       trivial
-    have h2: n % (k ^ 2) < (k ^ 2) := by apply Nat.mod_lt n; trivial
-    observe h3: n % (k ^ 2) ≤ (k ^ 2)
+    have h2 : n % (k ^ 2) < (k ^ 2) := by apply Nat.mod_lt n; trivial
+    observe h3 : n % (k ^ 2) ≤ (k ^ 2)
     calc
       n - n' = n%k ^ 2 := h1
-      _ ≤  k ^ 2 := h3
+      _ ≤ k ^ 2 := h3
 
-  obtain ⟨M,M_av_perm,M_max⟩: ∃ M, ¬ contains (permPattern σ) M ∧ ex (permPattern σ) n = density M
-    :=  by apply exists_av_and_ex_eq;  simp [permPattern,toPEquiv]
+  obtain ⟨M,M_av_perm,M_max⟩ : ∃ M, ¬ contains (permPattern σ) M ∧ ex (permPattern σ) n = density M
+ := by apply exists_av_and_ex_eq;  simp [permPattern,toPEquiv]
 
   let I := ({ a | ↑a ∈ Finset.Ico n' n} : Finset (Fin n))
-  have h_out: ∀ i, i ∉ I → ↑i < n' := by
+  have h_out : ∀ i, i ∉ I → ↑i < n' := by
     intro i
     contrapose!
     intro hi
@@ -982,11 +974,11 @@ lemma ex_permutation_to_dvd {k : ℕ} (σ : Perm (Fin k)) (n : ℕ) (hkn : k ^ 2
   let W (i j : Fin n) : Prop := (i, j) ∈ I ×ˢ Finset.univ
   let P (i j : Fin n) : Prop := T i j ∨ W i j
 
-  have denP: density P ≤ 2 * n*(n-n') := by
+  have denP : density P ≤ 2 * n*(n-n') := by
     simp [density,P,T,W]
-    let s: Finset (Fin n × Fin n) :=  Finset.univ ×ˢ I
-    let t: Finset (Fin n × Fin n) :=  I ×ˢ Finset.univ
-    obtain ⟨s_card,t_card⟩ : #s = n*(n - n')  ∧  #t = n*(n - n')  := by
+    let s : Finset (Fin n × Fin n) := Finset.univ ×ˢ I
+    let t : Finset (Fin n × Fin n) := I ×ˢ Finset.univ
+    obtain ⟨s_card,t_card⟩ : #s = n*(n - n')  ∧  #t = n*(n - n') := by
       constructor
       all_goals (
       · simp [s,t,mul_comm]
@@ -996,23 +988,23 @@ lemma ex_permutation_to_dvd {k : ℕ} (σ : Perm (Fin k)) (n : ℕ) (hkn : k ^ 2
         aesop
       )
 
-    let P_pts:= filter (fun x : Fin n × Fin n ↦ x.2 ∈ I ∨ x.1 ∈ I) Finset.univ
+    let P_pts := filter (fun x : Fin n × Fin n ↦ x.2 ∈ I ∨ x.1 ∈ I) Finset.univ
     have : P_pts = (s ∪ t) := by aesop
 
     calc
       #P_pts = #(s ∪ t) := congrArg card this
-      _ ≤  #s + #t :=  Finset.card_union_le s t
-      _ =  n * (n - n')+ n * (n - n') := Mathlib.Tactic.LinearCombination.add_eq_eq s_card t_card
+      _ ≤ #s + #t := Finset.card_union_le s t
+      _ = n * (n - n')+ n * (n - n') := Mathlib.Tactic.LinearCombination.add_eq_eq s_card t_card
       _ = 2 *  n * (n - n') := by ring
 
 
   let M1 (i j : Fin n) : Prop := M i j ∧   P i j;
   let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (P i j);
 
-  have dM1: density M1 ≤ 2 * k ^ 2 * n := calc
-    density M1 ≤  density P := by apply den_le_den_of_subset; aesop
+  have dM1 : density M1 ≤ 2 * k ^ 2 * n := calc
+    density M1 ≤ density P := by apply den_le_den_of_subset; aesop
     _          ≤ 2 * n*(n-n') := denP
-    _          ≤ 2 * k ^ 2 * n  := by
+    _          ≤ 2 * k ^ 2 * n := by
       conv =>
         right
         conv =>
@@ -1022,13 +1014,13 @@ lemma ex_permutation_to_dvd {k : ℕ} (σ : Perm (Fin k)) (n : ℕ) (hkn : k ^ 2
         rw [← mul_assoc]
       exact Nat.mul_le_mul_left (2 * n) h_nn'
 
-  have dM2: density M2 ≤ ex (permPattern σ ) n' := by
+  have dM2 : density M2 ≤ ex (permPattern σ ) n' := by
     let M' (i j : Fin n') : Prop := M i j
-    let fr: Fin n → Fin n' := fun i ↦ if h : i ∉ I then ⟨i, h_out i h⟩ else ⟨0,n'_pos⟩
-    suffices claim: ¬ contains (permPattern σ) M' by
-      let s : Finset (Fin n × Fin n) :=    {(x,y)| M2 x y}
-      let t : Finset (Fin n' × Fin n') :=  {(x,y)| M' x y}
-      have card_st: #s = #t := by
+    let fr : Fin n → Fin n' := fun i ↦ if h : i ∉ I then ⟨i, h_out i h⟩ else ⟨0,n'_pos⟩
+    suffices claim : ¬ contains (permPattern σ) M' by
+      let s : Finset (Fin n × Fin n) := {(x,y)| M2 x y}
+      let t : Finset (Fin n' × Fin n') := {(x,y)| M' x y}
+      have card_st : #s = #t := by
         apply Finset.card_bij (fun a  _ ↦ (fr a.1, fr a.2) ) ?hi ?i_inj ?i_surj
         · --?hi
           intro a ha
@@ -1071,13 +1063,13 @@ lemma ex_permutation_to_dvd {k : ℕ} (σ : Perm (Fin k)) (n : ℕ) (hkn : k ^ 2
             simp [this]
           constructor
           · simp [I]
-            observe: b.2 < n'
-            observe: b.2 < n
+            observe : b.2 < n'
+            observe : b.2 < n
             have : b.2 % n = b.2 := by exact Nat.mod_eq_of_modEq rfl this
             rwa [this]
           · simp [I]
-            observe: b.1 < n'
-            observe: b.1 < n
+            observe : b.1 < n'
+            observe : b.1 < n
             have : b.1 % n = b.1 := by exact Nat.mod_eq_of_modEq rfl this
             rwa [this]
 
@@ -1097,9 +1089,9 @@ lemma ex_permutation_to_dvd {k : ℕ} (σ : Perm (Fin k)) (n : ℕ) (hkn : k ^ 2
     · -- StrictMono f'
       simp [StrictMono]
       intro a b hab
-      observe o: f a < f b
-      observe: f a < n
-      observe: f b < n
+      observe o : f a < f b
+      observe : f a < n
+      observe : f b < n
 
       show ((f a : ℕ) : Fin n) < f b
       have := Fin.val_add_one_le_of_lt o
@@ -1111,10 +1103,10 @@ lemma ex_permutation_to_dvd {k : ℕ} (σ : Perm (Fin k)) (n : ℕ) (hkn : k ^ 2
         simp
         rw [← Fin.val_fin_lt]
         simp only [Fin.val_natCast]
-        observe: fa < n
-        observe: fb < n
+        observe : fa < n
+        observe : fb < n
         observe h1 : fa % n = fa
-        observe h2: fb % n = fb
+        observe h2 : fb % n = fb
         rw [h1,h2]
         simpa [fa, fb]
 
@@ -1124,9 +1116,9 @@ lemma ex_permutation_to_dvd {k : ℕ} (σ : Perm (Fin k)) (n : ℕ) (hkn : k ^ 2
     · -- StrictMono g'
       simp [StrictMono]
       intro a b hab
-      observe o: g a < g b
-      observe: g a < n
-      observe: g b < n
+      observe o : g a < g b
+      observe : g a < n
+      observe : g b < n
       --have : ((f a : ℕ) : Fin n) < (f b : ℕ )
       show ((g a : ℕ) : Fin n) < g b
       --#check Fin.val_add_one_le_of_lt
@@ -1139,10 +1131,10 @@ lemma ex_permutation_to_dvd {k : ℕ} (σ : Perm (Fin k)) (n : ℕ) (hkn : k ^ 2
         simp
         rw [← Fin.val_fin_lt]
         simp
-        observe: fa < n
-        observe: fb < n
+        observe : fa < n
+        observe : fb < n
         observe h1 : fa % n = fa
-        observe h2: fb % n = fb
+        observe h2 : fb % n = fb
         rw [h1,h2]
         simpa [fa, fb]
 
@@ -1156,7 +1148,7 @@ lemma ex_permutation_to_dvd {k : ℕ} (σ : Perm (Fin k)) (n : ℕ) (hkn : k ^ 2
   calc
     ex (permPattern σ) n = density M := M_max
     _ = density M1 + density M2 := split_density M P
-    _ ≤ 2 * k ^ 2 * n +(ex (permPattern σ ) n')  := add_le_add dM1 dM2
+    _ ≤ 2 * k ^ 2 * n +(ex (permPattern σ ) n') := add_le_add dM1 dM2
     _ = (ex (permPattern σ ) n') + 2 * k ^ 2 * n := by rw [Nat.add_comm]
 
 
@@ -1182,27 +1174,27 @@ theorem ex_permutation {k : ℕ} (σ : Perm (Fin k)) (n : ℕ) [NeZero n] [NeZer
       ext i j
       simp [onePattern, permPattern,toPEquiv]
       aesop
-    observe: ex onePattern n = 0
+    observe : ex onePattern n = 0
     rwa [h]
 
   · -- k ≥ 2
     induction' n using Nat.strong_induction_on with n ih
 
-    observe: k ^ 2 > 0
-    observe: 0 < k
+    observe : k ^ 2 > 0
+    observe : 0 < k
     have : k ≤ k ^ 2 := by
       rw [Nat.pow_two]
       exact Nat.le_mul_of_pos_left k this
 
     let K := (k ^ 2).choose k
-    observe: 0 < K
+    observe : 0 < K
 
     obtain rfl | n_pos := eq_zero_or_pos n
     · simp
     obtain base | h_k := le_or_lt n (k ^ 2)
     · -- base case is trivial
       calc
-        ex (permPattern σ) n ≤ n^2 := ex_le_trivial n
+        ex (permPattern σ) n ≤ n^2 := ex_le_sq n
         _ ≤ k ^ 2 * n := by rw [Nat.pow_two]; exact Nat.mul_le_mul_right n base
         _ ≤ 2 * k^4 * n := by
           have : k ^ 2 ≤ k^4 := by refine Nat.pow_le_pow_of_le k_ge1 ?_; simp
@@ -1212,11 +1204,11 @@ theorem ex_permutation {k : ℕ} (σ : Perm (Fin k)) (n : ℕ) [NeZero n] [NeZer
     · --
       let n' : ℕ := n - (n % k ^ 2)
       observe hkn : k ^ 2 < n
-      observe n_non_zero: NeZero n
-      observe o1: k ^ 2 ∣ n'
-      observe o_le: n' ≤ n
-      have o2:  0 < n' := by
-        observe o1: n % k ^ 2 < k ^ 2
+      observe n_non_zero : NeZero n
+      observe o1 : k ^ 2 ∣ n'
+      observe o_le : n' ≤ n
+      have o2 :  0 < n' := by
+        observe o1 : n % k ^ 2 < k ^ 2
         calc
           0 < k ^ 2 - n%k ^ 2 := Nat.zero_lt_sub_of_lt o1
           _ < n - n%k ^ 2 := by
@@ -1224,25 +1216,25 @@ theorem ex_permutation {k : ℕ} (σ : Perm (Fin k)) (n : ℕ) [NeZero n] [NeZer
             exact h_k
             exact Nat.le_of_succ_le o1
           _ = n' := by simp [n']
-      observe o3: NeZero n'
+      observe o3 : NeZero n'
 
-      have o4: n'/(k ^ 2) < n := by
+      have o4 : n'/(k ^ 2) < n := by
         suffices 1 < (k ^ 2) by
-          observe: n'/k ^ 2 < n'
+          observe : n'/k ^ 2 < n'
           calc
-            n'/k ^ 2 < n':= this
+            n'/k ^ 2 < n' := this
             _ ≤ n := o_le
         simpa
 
-      have ez_eq1: 2 *  k ^ 4 * K * (n'/k ^ 2) =  2 * ((k ^ 2) * K * n') := by
-        suffices k ^ 4 * K * (n'/k ^ 2) =  (k ^ 2) * K * n' by simpa [mul_assoc]
+      have ez_eq1 : 2 *  k ^ 4 * K * (n'/k ^ 2) = 2 * ((k ^ 2) * K * n') := by
+        suffices k ^ 4 * K * (n'/k ^ 2) = (k ^ 2) * K * n' by simpa [mul_assoc]
         have : k ^ 4 * (n'/k ^ 2) = (k ^ 2) * n' := by
           suffices k ^ 4 * (n'/k ^ 2) = (k^4/k ^ 2) * n' by
             rw [this]
             rw [Nat.pow_div (Nat.le.step (Nat.le.step Nat.le.refl))]
             trivial
           have : k ^ 2 ∣ k^4 := by
-            observe: 2 ≤ 4
+            observe : 2 ≤ 4
             rwa [propext (Nat.pow_dvd_pow_iff_le_right k_ge1)]
           rw [Nat.pow_div]
           simp
@@ -1264,19 +1256,19 @@ theorem ex_permutation {k : ℕ} (σ : Perm (Fin k)) (n : ℕ) [NeZero n] [NeZer
           rw [mul_comm]
 
       have : ((k - 1) ^ 2 + k + 1) ≤ k ^ 2 := by
-        have : (k - 1) ^ 2 +k +1= k ^ 2 - k +2:= by
+        have : (k - 1) ^ 2 +k +1= k ^ 2 - k +2 := by
           cases k
           trivial
           simp [pow_two,left_distrib]
           ring
         rw [this]
-        observe: k ^ 2 - k + 2  = k ^ 2 + 2 - k
+        observe : k ^ 2 - k + 2 = k ^ 2 + 2 - k
         rw [this]
         simpa
 
       calc
         ex (permPattern σ) n
-          ≤  ex (permPattern σ) n' + 2 * k ^ 2 * n := ex_permutation_to_dvd σ n hkn
+          ≤ ex (permPattern σ) n' + 2 * k ^ 2 * n := ex_permutation_to_dvd σ n hkn
         _ ≤ (k - 1) ^ 2 * ex (permPattern σ) (n'/k ^ 2) + 2 * n' * k^3 * K + 2 * k ^ 2 * n := by
           gcongr; exact ex_perm_recurrence σ n' o1
         _ ≤ (k - 1) ^ 2 * (2 * k ^ 4 * K * (n'/k ^ 2)) + 2 * n' * k^3 * K + 2 * k ^ 2 * n := by
@@ -1287,12 +1279,12 @@ theorem ex_permutation {k : ℕ} (σ : Perm (Fin k)) (n : ℕ) [NeZero n] [NeZer
         _ ≤ (k - 1) ^ 2 * ( 2 * ((k ^ 2) * K * n)) + 2 * n * k^3 * K  + 2 * k ^ 2 * n := by aesop
         _ ≤ (k - 1) ^ 2 * ( 2 * ((k ^ 2) * K * n)) + 2 * n * k^3 * K  + 2 * k ^ 2 * n * K := by
           aesop
-        _ = (2 * k ^ 2 *n * K) * ((k - 1) ^ 2 + k + 1)  := by ring
-        _ ≤ (2 * k ^ 2 *n * K) * k ^ 2  := Nat.mul_le_mul_left (2 * k ^ 2 * n * K) this
+        _ = (2 * k ^ 2 *n * K) * ((k - 1) ^ 2 + k + 1) := by ring
+        _ ≤ (2 * k ^ 2 *n * K) * k ^ 2 := Nat.mul_le_mul_left (2 * k ^ 2 * n * K) this
         _ = 2 * k^4  * K * n := by ring
 
-theorem ex_perm_lb{k : ℕ} (σ : Perm (Fin k)) (n : ℕ) [NeZero n] (hk: 2 ≤ k) :
-  n ≤  ex (permPattern σ) n  := by
+theorem ex_perm_lb{k : ℕ} (σ : Perm (Fin k)) (n : ℕ) [NeZero n] (hk : 2 ≤ k) :
+  n ≤ ex (permPattern σ) n := by
 
   let s : Finset (Fin k) := Finset.univ
   have : 1 < #s := by aesop

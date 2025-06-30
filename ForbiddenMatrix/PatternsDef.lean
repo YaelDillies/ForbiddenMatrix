@@ -12,7 +12,7 @@ attribute [local irreducible] OrderDual
 -- λ x : nat ↦ x + 5
 -- variable {n : ℕ }
 -- ![![a, b, c], ![b, c, d]] : matrix (fin 2) (fin 3) α
--- see https://leanprover-community.github.io/theories/linear_algebra.html
+-- see https ://leanprover-community.github.io/theories/linear_algebra.html
 -- λ (i : m) (j : n), (_ : α)
 def HatPattern : Fin 2 → Fin 3 → Prop :=
   ![
@@ -35,7 +35,7 @@ def Horizontal3Pattern : Fin 1 → Fin 3 → Prop := ![![true, true, true]]
 
 
 def Horizontal3Patternt : Fin 1 → Fin 3 → Fin 2 := ![![1, 1, 1]]
---def HatPatternFin: Fin 2 → Fin 3 → Bool :=
+--def HatPatternFin : Fin 2 → Fin 3 → Bool :=
 -- ![
 --   ![0, 1, 0],
 --   ![1, 0, 1]
@@ -61,10 +61,10 @@ def PatternOneB : Fin 1 → Fin 1 → Bool := fun _ : Fin 1 => fun _ : Fin 1 => 
 
 --def f : Fin 3 → Fin 3 := ![0, 2, 1 : Fin 3]
 
-def permPatternFin {k : ℕ} (σ : Equiv.Perm (Fin k)) (i j : Fin k): Fin 2 :=
+def permPatternFin {k : ℕ} (σ : Equiv.Perm (Fin k)) (i j : Fin k) : Fin 2 :=
   Equiv.Perm.permMatrix (Fin 2) σ i j
 
-def permPattern {k : ℕ} (σ : Equiv.Perm (Fin k)) (i j : Fin k): Prop :=
+def permPattern {k : ℕ} (σ : Equiv.Perm (Fin k)) (i j : Fin k) : Prop :=
   Equiv.Perm.permMatrix ℕ σ i j = 1
 
 --def identity (k :ℕ) (i : Fin k) : Fin k := i
