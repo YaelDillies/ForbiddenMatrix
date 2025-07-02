@@ -15,23 +15,16 @@ def L'' : Fin 2 → Fin 2 → Prop :=
 
 def A' : Fin 2 → Fin 1 → Prop :=
   ![![true], ![false]]
+
 def B' : Fin 2 → (Fin 1) → Prop :=
   ![![false], ![true]]
 
---def C' : (Fin 3)ᵒᵈ → Bool := ![true, false, false]
-
---Matrix.of
---Fin.revOrderIso
-
 def tranpose (M : α → β → Prop) : β → α → Prop := fun x y ↦ M y x
 def rev_all_rows (M : α → β → Prop) : α → βᵒᵈ → Prop := fun i ↦ M i ∘ ofDual
---def rot_cw (M : α → β → Prop) :  β → α ᵒᵈ → Prop := (rev_all_rows ∘ tranpose) M
-def rot_cw (M : α → β → Prop) :  β → α ᵒᵈ → Prop := (rev_all_rows ∘ tranpose) M
+def rot_cw (M : α → β → Prop) : β → αᵒᵈ → Prop := (rev_all_rows ∘ tranpose) M
 
 def rev_all_rows_via_list {n : ℕ} (M : α → Fin n → Prop) : α → Fin n → Prop := fun a i ↦ M a i.rev
 
---def tranpose (M : α → β → Prop) : β → α → Prop := fun x y ↦ M y x
---#check rev_all_rows B
 def L : Fin 2 → Fin 2 → Prop :=
   ![
     ![true, false],
@@ -49,9 +42,9 @@ def Y : Fin 3 → Bool := ![false, false, true]
 
 def A : Fin 1 → Fin 2 → Prop := ![![true, false]]
 def B : Fin 1 → (Fin 2)ᵒᵈ → Prop := ![![true, false]∘ ofDual]
-def C : Fin 1 → (Fin 2) → Prop := ![![false, true]]
+def C : Fin 1 → Fin 2 → Prop := ![![false, true]]
 
-example : (fun i ↦ (C i) ∘ Fin.revOrderIso ∘ toDual) = fun i ↦ (rev_all_rows A i)∘ toDual := by
+example : (fun i ↦ C i ∘ Fin.revOrderIso ∘ toDual) = fun i ↦ rev_all_rows A i ∘ toDual := by
   ext i j
   simp [rev_all_rows, A, C]
   fin_cases i ; fin_cases j <;> simp [Fin.last, Fin.rev]

@@ -1,6 +1,5 @@
 import ForbiddenMatrix.Containment
 import ForbiddenMatrix.ExtremalFunction
 import ForbiddenMatrix.MatrixOperations
-import ForbiddenMatrix.PatternsDef
 import ForbiddenMatrix.PermutationPatterns
 import ForbiddenMatrix.SmallPatterns
