@@ -1,8 +1,9 @@
 import ForbiddenMatrix.Containment
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.Order.Monoid.Canonical.Basic
 import Mathlib.Data.Fintype.Prod
+import Mathlib.Data.Nat.Cast.Basic
 import Mathlib.Data.Nat.Lattice
-import Mathlib.NumberTheory.Divisors
 
 open Finset
 
@@ -10,77 +11,43 @@ variable {α β γ δ : Type*} [LinearOrder α] [LinearOrder β] [LinearOrder γ
   {P : α → β → Prop}
 
 open scoped Classical in
-noncomputable def densityRect (M : Fin n → Fin m → Prop) : ℕ := #{(i, j) : Fin n × Fin m | M i j}
-
-open scoped Classical in
-noncomputable def density {n : ℕ} (M : Fin n → Fin n → Prop) : ℕ :=
-  #{(i, j) : Fin n × Fin n | M i j}
+noncomputable def density (M : Fin m → Fin n → Prop) : ℕ := #{(i, j) : Fin m × Fin n | M i j}
 
 lemma density_def {n : ℕ} (M : Fin n → Fin n → Prop) [DecidableRel M] :
     density M = #{(i, j) : Fin n × Fin n | M i j} := by unfold density; convert rfl
 
-open scoped Classical in noncomputable
-def row_density {n : ℕ } (M : Fin n → Fin n → Prop) (i : Fin n) : ℕ := #{j | M i j}
+@[gcongr] lemma density_mono {M N : Fin m → Fin n → Prop} (h : ∀ i j, M i j → N i j) :
+    density M ≤ density N := card_le_card fun _ ↦ by aesop
 
 open scoped Classical in noncomputable
-def col_density {n : ℕ } (M : Fin n → Fin n → Prop) (j : Fin n) : ℕ := #{i | M i j}
+def row_density {n : ℕ} (M : Fin n → Fin n → Prop) (i : Fin n) : ℕ := #{j | M i j}
 
-
-open scoped Classical in noncomputable def exRect (P : α → β → Prop) (n : ℕ) (m : ℕ) : ℕ :=
-  sup {M : Fin n → Fin m → Prop | ¬ Contains P M} fun M ↦ densityRect M
-
-def exRectB [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
-    [DecidableRel (· < · : α → α → Prop)] [DecidableRel (· < · : β → β → Prop)]
-    (P : α → β → Bool) (n : ℕ) (m : ℕ) : ℕ :=
-  sup {M : Fin n → Fin m → Bool | ¬ containsB P M} fun M ↦ # {ij : Fin n × Fin m | M ij.1 ij.2}
+open scoped Classical in noncomputable
+def col_density {n : ℕ} (M : Fin n → Fin n → Prop) (j : Fin n) : ℕ := #{i | M i j}
 
 open scoped Classical in noncomputable
 def ex (P : α → β → Prop) (n : ℕ) : ℕ := sup {M : Fin n → Fin n → Prop | ¬ Contains P M} density
 
-def exB [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
-    [DecidableRel (· < · : α → α → Prop)] [DecidableRel (· < · : β → β → Prop)]
-    (P : α → β → Bool) (n : ℕ) : ℕ :=
-  exRectB P n n
+@[simp] lemma ex_zero (P : α → β → Prop) : ex P 0 = 0 := by simp [ex, density]
 
---open scoped Classical in noncomputable
--- density subset
-theorem den_le_den_of_subset {n : ℕ} {M N : Fin n → Fin n → Prop}(h : ∀ i j, M i j → N i j) :
-    density M ≤ density N := by
-  classical
-  let pM : Finset (Fin n × Fin n) := {p | M p.1 p.1}
-  let pN : Finset (Fin n × Fin n) := {p | N p.1 p.1}
-  simp [density]
-  apply card_le_card ?_
-  intro p hp
-  aesop
+theorem ex_le_iff {P : α → β → Prop} {m n : ℕ} :
+    ex P n ≤ m ↔ ∀ (M : Fin n → Fin n → Prop), ¬ Contains P M → density M ≤ m:= by
+  simp [ex]
 
-lemma empty_matrix_av_all_patterns (n : ℕ) (P : α → β → Prop) (P_nonempty : ∃ a b, P a b) :
-    ¬ Contains P (fun _ _ : Fin n ↦ False) := by
-  let M (_ _ : Fin n) : Prop := False
-  by_contra McontainP
-  rw [Contains] at McontainP
-  obtain ⟨f, _, g, _, m⟩ := McontainP
-  obtain ⟨a, b, Pab⟩ := P_nonempty
-  have := m a b Pab
-  have := M (f a) (g b)
-  contradiction
+theorem le_ex_iff (P : α → β → Prop) (P_nonempty : ∃ a b, P a b) {m n : ℕ} :
+    m ≤ ex P n ↔ ∃ (M : Fin n → Fin n → Prop), ¬ Contains P M ∧ m ≤ density M := by
+  obtain rfl | hm := eq_zero_or_pos m
+  · simpa using ⟨_, not_contains_false P P_nonempty⟩
+  · simp [ex, Finset.le_sup_iff hm]
 
 lemma ex_le_sq {P : α → β → Prop} (n : ℕ) : ex P n ≤ n ^ 2 := by
   simpa [ex, density, sq] using fun M _ ↦ Finset.card_le_univ (α := Fin n × Fin n) _
-
-@[simp] lemma ex_of_zero (P : α → β → Prop) {n : ℕ} (h : n = 0) : ex P n = 0 := by simp [ex]; aesop
 
 lemma density_le_ex_of_not_contains (M : Fin n → Fin n → Prop) (AvoidP : ¬ Contains P M) :
     density M ≤ ex P n := by
   rw [ex]
   apply le_sup
   simpa only [mem_filter, Finset.mem_univ, true_and]
-
-theorem le_ex_iff (P : α → β → Prop) (P_nonempty : ∃ a b, P a b) {m n : ℕ} :
-    m ≤ ex P n ↔ ∃ (M : Fin n → Fin n → Prop), ¬ Contains P M ∧ m ≤ density M := by
-  obtain rfl | hm := eq_zero_or_pos m
-  · simpa using ⟨_, empty_matrix_av_all_patterns n P P_nonempty⟩
-  · simp [ex, Finset.le_sup_iff hm]
 
 theorem split_density_to_rows {n : ℕ} (M : Fin n → Fin n → Prop) :
     density M = ∑ i, row_density M i := by
@@ -110,11 +77,11 @@ def rectPtset (n a₁ b₁ a₂ b₂ : ℕ) : Finset (Fin n × Fin n) :=
   ({a | ↑a ∈ Finset.Ico a₁ b₁} : Finset (Fin n)) ×ˢ ({a | ↑a ∈ Finset.Ico a₂ b₂} : Finset (Fin n))
 
 open scoped Classical in noncomputable
-def rectPtsetMatrix {n : ℕ }(M : Fin n → Fin n → Prop) (a₁ b₁ a₂ b₂ : ℕ) : Finset (Fin n × Fin n) :=
+def rectPtsetMatrix {n : ℕ}(M : Fin n → Fin n → Prop) (a₁ b₁ a₂ b₂ : ℕ) : Finset (Fin n × Fin n) :=
   {(a, b) | M a b ∧ (a, b) ∈ (rectPtset n a₁ b₁ a₂ b₂)}
 
 open scoped Classical in noncomputable
-def rectPtsetSubsetMatrix {n : ℕ }(M : Fin n → Fin n → Prop) (R C : Finset (Fin n)) :
+def rectPtsetSubsetMatrix {n : ℕ}(M : Fin n → Fin n → Prop) (R C : Finset (Fin n)) :
     Finset (Fin n × Fin n) := {(a, b) | M a b ∧ (a, b) ∈ R ×ˢ C}
 
 lemma card_interval {n : ℕ} (x y : ℕ) (hy : y ≤ n) :
@@ -131,7 +98,7 @@ lemma card_interval {n : ℕ} (x y : ℕ) (hy : y ≤ n) :
   intro x y hy
   exact card_interval x y hy
 
-@[simp] lemma card_rectPtsetSubsetMatrix {n : ℕ }(M : Fin n → Fin n → Prop) (R C : Finset (Fin n)) :
+@[simp] lemma card_rectPtsetSubsetMatrix {n : ℕ}(M : Fin n → Fin n → Prop) (R C : Finset (Fin n)) :
     #(rectPtsetSubsetMatrix M R C) ≤ #R * #C := by
   calc
     #(rectPtsetSubsetMatrix M R C)
@@ -225,7 +192,7 @@ lemma exists_av_and_ex_eq {n : ℕ} {P : α → β → Prop} (P_nonempty : ∃ a
     ∃ M : Fin n → Fin n → Prop, ¬ Contains P M ∧ ex P n = density M := by
   classical
   simpa using Finset.exists_mem_eq_sup {M : Fin n → Fin n → Prop | ¬ Contains P M}
-    ⟨_, by simpa using empty_matrix_av_all_patterns n P P_nonempty⟩ density
+    ⟨_, by simpa using not_contains_false P P_nonempty⟩ density
 
 theorem split_density {n : ℕ} (M : Fin n → Fin n → Prop) (Pred : Fin n → Fin n → Prop) :
     let M1 (i j : Fin n) : Prop := M i j ∧  (Pred i j);

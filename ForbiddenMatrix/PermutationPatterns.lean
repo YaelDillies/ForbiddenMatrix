@@ -1,10 +1,5 @@
-import ForbiddenMatrix.MatrixOperations
 import ForbiddenMatrix.SmallPatterns
-
-import Mathlib.Analysis.Analytic.Composition
-import Mathlib.Combinatorics.Pigeonhole
-import Mathlib.Data.Finset.Powerset
-import Mathlib.Data.Nat.Choose.Basic
+import Mathlib.Data.ZMod.Basic
 import Mathlib.Tactic.Group
 import Mathlib.Tactic.Qify
 
@@ -12,6 +7,14 @@ attribute [gcongr] Nat.sub_lt_sub_right
 
 instance Fin.instNontrivial {n : ℕ} [Fact <| 2 ≤ n] : Nontrivial (Fin n) :=
   nontrivial_iff_two_le.2 Fact.out
+
+@[simp, norm_cast] lemma Fin.natCast_val_eq_zmodFinEquiv {n : ℕ} [NeZero n] (a : Fin n) :
+    a = ZMod.finEquiv n a := by
+  obtain _ | n := n
+  · obtain ⟨_, ⟨⟩⟩ := a
+  · change (⟨_, _⟩ : ZMod (n + 1)) = ⟨_, _⟩
+    congr
+    simp
 
 open Finset Set OrderDual Equiv
 
@@ -33,63 +36,41 @@ theorem ex_identityPattern_le (k n : ℕ) : ex (IdentityPattern k) n ≤ (2 * n 
   obtain rfl | hn := eq_zero_or_neZero n
   · simp
   classical
-  simp [ex]
+  simp only [ex, Finset.sup_le_iff, mem_filter, Finset.mem_univ, true_and]
   intro M avoid_Ik
   by_contra! M_large_density
-  simp [density] at M_large_density
-
-  let f : Fin n × Fin n → ℤ := fun ⟨i, j⟩ ↦ i-j
-  let s := (filter (fun (i, j) ↦ M i j) univ)
+  let d : Fin n × Fin n → ℤ := fun ⟨i, j⟩ ↦ i - j
+  let s : Finset (Fin n × Fin n) := {(i, j) : Fin n × Fin n | M i j}
   let t : Finset ℤ := Icc (-n + 1) (n - 1)
-
-  obtain ⟨p, hp, hp'⟩ : ∃ p ∈ t, k - 1 < #{x ∈ s | f x = p} := by
+  obtain ⟨p, hp, hp'⟩ : ∃ p ∈ t, k - 1 < #{x ∈ s | d x = p} := by
     apply exists_lt_card_fiber_of_mul_lt_card_of_maps_to
-    · simp [s, f, t]; omega;
+    · simp [s, d, t]; omega
     convert M_large_density
-    simp [s, t]
+    simp [t]
     omega
-  let set_points_to_p : Finset (Fin n × Fin n) := (filter (fun x ↦ f x = p) s)
-  let set_points_to_p_col : Finset (Fin n) := { x.2 | x ∈ set_points_to_p}
-
-  have : set_points_to_p.card = set_points_to_p_col.card := by
-    apply Finset.card_bij (fun a _ ↦ a.2) ?hi ?i_inj ?i_surj; aesop;aesop;aesop
-
-  have pcardk : k ≤ set_points_to_p.card := by
-    simp [set_points_to_p]
-    omega
-
-  have hcol : k ≤ set_points_to_p_col.card := by omega
-
-  let g := set_points_to_p_col.orderEmbOfCardLe hcol
-  let f' : Fin k → Fin n := fun i ↦ ↑((p : ℤ) + ((g i) : ℤ))
-  have mono_f : StrictMono f' := by
-    intro a b hb
-    simp [f']
-    have : g a ∈ set_points_to_p_col := set_points_to_p_col.orderEmbOfCardLe_mem hcol a
-    simp [set_points_to_p_col] at this
-    obtain ⟨a', ha'⟩ := this
-    simp [set_points_to_p, f] at ha'
-    have : g b ∈ set_points_to_p_col := set_points_to_p_col.orderEmbOfCardLe_mem hcol b
-    simp [set_points_to_p_col] at this
-    obtain ⟨b', hb'⟩ := this
-    simp [set_points_to_p, f] at hb'
-    nth_rewrite 1 [← ha'.2]
-    nth_rewrite 1 [← hb'.2]
-    simp only [Int.cast_sub, Int.cast_natCast, Fin.cast_val_eq_self, sub_add_cancel, gt_iff_lt]
-
-    have ha'' := ha'.2
-    rw [← hb'.2] at ha''
-    have : (a' : ℤ) = ↑↑b' - ↑↑(g b) + ↑↑(g a) := by omega
-    have : g a < g b := by simpa [StrictMono]
-    omega
-  refine avoid_Ik ⟨f', mono_f, g, by simp [StrictMono], ?_⟩
-  intro x y H
-  simp [IdentityPattern] at H
-  have : g y ∈ set_points_to_p_col := set_points_to_p_col.orderEmbOfCardLe_mem hcol y
-  simp [set_points_to_p_col] at this
-  obtain ⟨a, ha⟩ := this
-  simp [set_points_to_p, f] at ha
-  simpa [f', H, ← ha.2, s] using ha.1
+  let fiber : Finset (Fin n × Fin n) := {x ∈ s | d x = p}
+  let fiberSnd : Finset (Fin n) := {x.2 | x ∈ fiber}
+  have card_fiber : #fiber = #fiberSnd := by apply card_bij fun a _ ↦ a.2 <;> aesop
+  have le_card_fiberSnd : k ≤ #fiberSnd := by simp [← card_fiber, fiber]; omega
+  let g := fiberSnd.orderEmbOfCardLe le_card_fiberSnd
+  let f (i : Fin k) : Fin n := (ZMod.finEquiv n).symm p + g i
+  have f_spec a (a' : Fin n) (ha : (a' - g a : ℤ) = p) : f a = a' := by simp [f, ← ha]
+  have mono_f : StrictMono f := fun a b hab ↦ by
+    have hga : g a ∈ fiberSnd := fiberSnd.orderEmbOfCardLe_mem _ a
+    have hgb : g b ∈ fiberSnd := fiberSnd.orderEmbOfCardLe_mem _ b
+    simp [fiberSnd, fiber, d] at hga hgb
+    obtain ⟨a', -, ha'⟩ := hga
+    obtain ⟨b', -, hb'⟩ := hgb
+    have hgab : g a < g b := by simpa
+    have hab' : a' < b' := by omega
+    simpa [f_spec _ _ ha', f_spec _ _ hb'] using hab'
+  refine avoid_Ik ⟨f, mono_f, g, by simp [StrictMono], ?_⟩
+  simp [IdentityPattern]
+  intro a
+  have hga : g a ∈ fiberSnd := fiberSnd.orderEmbOfCardLe_mem _ a
+  simp [fiberSnd, fiber, d, s] at hga
+  obtain ⟨a', hfa', ha'⟩ := hga
+  simpa [f_spec _ _ ha'] using hfa'
 
 /-! ### Marcus Tardos' theorem -/
 
@@ -180,7 +161,7 @@ theorem den_eq_sum_blk_den (M : Fin n → Fin n → Prop) (hqn : q ∣ n) :
   let Q := Fin (n / q) × Fin (n / q)
   let N := Fin n × Fin n
   let fq (x : Fin n) : Fin (n / q) := ⟨x / q, Nat.div_lt_div_of_lt_of_dvd hqn x.isLt⟩
-  let s : Finset N := { (x, y)| M x y}
+  let s : Finset N := {(x, y)| M x y}
   let f : N → Q := fun (i, j) ↦ (fq i, fq j)
   let t : Finset Q := {(i, j)| B i j}
   have H : ∀ x ∈ s, f x ∈ t := by
@@ -379,7 +360,7 @@ theorem sum_blk_den_le_mul_den_blk {c : ℕ} (M : Fin n → Fin n → Prop)
   calc
     ∑ ⟨i, j⟩ : Q with B i j, blk_den M i j
     _ ≤ ∑ ⟨i, j⟩ : Q with B i j, c := by apply Finset.sum_le_sum;intros p hp; aesop
-    _ = #{ (i, j) | B i j }*c := sum_const_nat fun x ↦ congrFun rfl
+    _ = #{(i, j) | B i j }*c := sum_const_nat fun x ↦ congrFun rfl
     _ = c * density B := Nat.mul_comm ..
 
 lemma av_perm_contract_av_perm (q : ℕ) (σ : Perm (Fin k)) (M : Fin n → Fin n → Prop)
@@ -436,7 +417,7 @@ lemma density_WB {n k : ℕ} (h_n : 0 < n) (h_k : k ^ 2 ∣ n) (M : Fin n → Fi
     simp_all only [ge_iff_le, and_imp, q, WB, W, B]
 
   let f : Fin (n / q) → Finset (Fin n) := fun i ↦ if h : WB i j then (WB_k_col i h).choose else ∅
-  let s := ({ i | WB i j} : Finset (Fin (n / q))) -- all wide blocks
+  let s := ({i | WB i j} : Finset (Fin (n / q))) -- all wide blocks
   let t := Finset.powersetCard k C -- all subset of the column of size k
 
   obtain ⟨S, hs, hs'⟩ : ∃ C' ∈ t, k - 1 < #{i ∈ s | f i = C'} := by
@@ -571,7 +552,7 @@ lemma density_TB {n k : ℕ} (h_n : 0 < n) (h_k : k ^ 2 ∣ n) (M : Fin n → Fi
     simp_all only [ge_iff_le, and_imp, q, TB, T, B]
 
   let f : Fin (n / q) → Finset (Fin n) := fun j ↦ if h : TB i j then (TB_k_row j h).choose else ∅
-  let s := ({ j | TB i j} : Finset (Fin (n / q))) -- all tall blocks
+  let s := ({j | TB i j} : Finset (Fin (n / q))) -- all tall blocks
   let t := Finset.powersetCard k R -- all subset of the rows of size k
 
   obtain ⟨S, hs, hs'⟩ : ∃ C' ∈ t, k - 1 < #{i ∈ s | f i = C'} := by
@@ -681,7 +662,7 @@ lemma density_TB {n k : ℕ} (h_n : 0 < n) (h_k : k ^ 2 ∣ n) (M : Fin n → Fi
     simp only [g]
     rwa [H'] at H
 
-lemma blk_den_SB { n : ℕ} (k : ℕ) (M : Fin n → Fin n → Prop) :
+lemma blk_den_SB {n : ℕ} (k : ℕ) (M : Fin n → Fin n → Prop) :
     let q := k ^ 2
     let B := blkMatrix M q
     let W (i j : Fin (n / q)) : Prop := k ≤ #{c | ∃ r, (r, c) ∈ rectPtsetqMatrix M q i j}
@@ -890,7 +871,7 @@ private lemma ex_permutation_to_dvd (σ : Perm (Fin k)) (n : ℕ) (hkn : k ^ 2 <
 
   have dM1 := calc
         density M1
-      ≤ density P := by apply den_le_den_of_subset; aesop
+    _ ≤ density P := by gcongr; aesop
     _ ≤ 2 * n * (n - n') := denP
     _ ≤ 2 * k ^ 2 * n := by
       conv =>
@@ -934,7 +915,7 @@ private lemma ex_permutation_to_dvd (σ : Perm (Fin k)) (n : ℕ) (hkn : k ^ 2 <
       calc
         density M2 = #s := by simp [density, s]; congr
         _ = #t := card_st
-        _ = density M' := by simp [density, t1Space_antitone, t]
+        _ = density M' := by simp [density, t]
         _ ≤ ex (PermPattern σ) n' := density_le_ex_of_not_contains M' claim
 
     by_contra!
@@ -969,7 +950,7 @@ theorem ex_permPattern_le (σ : Perm (Fin k)) (n : ℕ) :
 
   obtain rfl | n_pos := eq_zero_or_pos n
   · simp
-  obtain base | h_k := le_or_lt n (k ^ 2)
+  obtain base | h_k := le_or_gt n (k ^ 2)
   · -- base case is trivial
     calc
       ex (PermPattern σ) n ≤ n^2 := ex_le_sq n

@@ -29,3 +29,6 @@ lemma contains_rfl {M : γ → δ → Prop} : Contains M M := by rfl
 
 @[simp] lemma contains_of_isEmpty [IsEmpty α] [IsEmpty β] : Contains P M := by
    simp [Contains, StrictMono]
+
+lemma not_contains_false (P : α → β → Prop) (P_nonempty : ∃ a b, P a b) :
+    ¬ Contains P fun (_ : γ) (_ : δ) ↦ False := by simp [Contains, *]
