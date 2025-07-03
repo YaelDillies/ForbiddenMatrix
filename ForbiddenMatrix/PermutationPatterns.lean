@@ -54,7 +54,7 @@ theorem ex_identityPattern_le (k n : ℕ) : ex (IdentityPattern k) n ≤ (2 * n 
   have le_card_fiberSnd : k ≤ #fiberSnd := by simp [← card_fiber, fiber]; omega
   let g := fiberSnd.orderEmbOfCardLe le_card_fiberSnd
   let f (i : Fin k) : Fin n := (ZMod.finEquiv n).symm p + g i
-  have f_spec a (a' : Fin n) (ha : (a' - g a : ℤ) = p) : f a = a' := by simp [f, ← ha]
+  have f_spec a (a' : Fin n) (ha : a' - g a = p) : f a = a' := by simp [f, ← ha]
   have mono_f : StrictMono f := fun a b hab ↦ by
     have hga : g a ∈ fiberSnd := fiberSnd.orderEmbOfCardLe_mem _ a
     have hgb : g b ∈ fiberSnd := fiberSnd.orderEmbOfCardLe_mem _ b
