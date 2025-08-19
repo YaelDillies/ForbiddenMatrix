@@ -160,21 +160,20 @@ lemma ex_verticalPattern_two (n : ℕ) : ex (VerticalPattern 2) n = n := by
     cases dominance with
     | inl ab =>
       refine ⟨![a.1, b.1], by  simpa [f, StrictMono, Fin.forall_fin_two], g, gmono, ?_⟩
-      simp [Fin.forall_fin_one, Fin.forall_fin_two, AllPattern, g]
+      simp [Fin.forall_fin_two, AllPattern, g]
       aesop
     | inr ba =>
       let f := ![b.1, a.1]
       refine ⟨![b.1, a.1], by  simpa [f, StrictMono, Fin.forall_fin_two], g, gmono, ?_⟩
-      simp [Fin.forall_fin_one, Fin.forall_fin_two, AllPattern, g]
+      simp [Fin.forall_fin_two, AllPattern, g]
       aesop
   · obtain rfl | hn := eq_zero_or_neZero n
     · simp
     refine (le_ex_iff _ ⟨0, by simp [AllPattern]⟩).2 ⟨fun i j ↦ i = 0, ?_, ge_of_eq ?_⟩
     · rintro ⟨f, hf, g, hg, prop⟩
-      simp [Fin.forall_fin_one, Fin.forall_fin_two, AllPattern] at prop
+      simp [Fin.forall_fin_two, AllPattern] at prop
       exact (hf Fin.zero_lt_one).ne <| prop.1.trans prop.2.symm
-    · calc
-            density _
+    · calc  density _
         _ = #{x : Fin n × Fin n | x.1 = 0} := density_def _
         _ = #({0} ×ˢ .univ : Finset <| Fin n × Fin n) := by congr; aesop
         _ = n := by simp
@@ -306,8 +305,8 @@ theorem ex_hat (n : ℕ) : ex HatPattern n ≤ 3 * n := by
       omega
   have M2_avoids_V2 : ¬ Contains (VerticalPattern 2) M2 := by
     rintro ⟨f, hf, g, _, v2_to_M2⟩
-    simp only [AllPattern, not_or, not_forall, Classical.not_imp, not_le, forall_const,
-      Fin.forall_fin_one, Fin.isValue, Fin.forall_fin_two, M2, min_or_max_of_row] at v2_to_M2
+    simp only [AllPattern, not_or, not_forall, not_le, forall_const, Fin.forall_fin_one,
+      Fin.isValue, Fin.forall_fin_two, M2, min_or_max_of_row] at v2_to_M2
     obtain ⟨⟨hib, -, -⟩, -, ⟨a, hja, hab⟩, c, hjc, hbc⟩ := v2_to_M2
     set b := g 0
     --      a b c

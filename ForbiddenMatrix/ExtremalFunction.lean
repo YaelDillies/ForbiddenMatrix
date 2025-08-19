@@ -110,7 +110,7 @@ lemma card_interval {n : ℕ} (x y : ℕ) (hy : y ≤ n) :
   aesop
 
 lemma density_mk_mem_product {n : ℕ} (I J : Finset (Fin n)) :
-    density (fun i j ↦ (i, j) ∈ I ×ˢ J) = #I * #J := by simp [density_def, ← mem_product]
+    density (fun i j ↦ (i, j) ∈ I ×ˢ J) = #I * #J := by simp [density_def, -mem_product]
 
 theorem den_all1_matrix_row_subset {n : ℕ} (I : Finset (Fin n)) :
     let M (i j : Fin n) : Prop := (i, j) ∈ I ×ˢ  Finset.univ
@@ -218,12 +218,8 @@ theorem split_density {n : ℕ} (M : Fin n → Fin n → Prop) (Pred : Fin n →
       simp [s]
       tauto
   have dm : density M = s.card := by simp [density, s]
-  have dm1 : density M1 = s1.card := by
-    simp [density]
-    convert rfl
-  have dm2 : density M2 = s2.card := by --
-    simp [density, M2, s2, M1]
-    convert rfl
+  have dm1 : density M1 = #s1 := by simp [density_def, s1]
+  have dm2 : density M2 = #s2 := by simp [density_def, s2]
   have s1eqs2card : (s1 ∪ s2).card = s1.card + s2.card := by
     apply card_union_of_disjoint
     rw [disjoint_left]

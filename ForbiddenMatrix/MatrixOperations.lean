@@ -45,9 +45,7 @@ def B : Fin 1 → (Fin 2)ᵒᵈ → Prop := ![![true, false]∘ ofDual]
 def C : Fin 1 → Fin 2 → Prop := ![![false, true]]
 
 example : (fun i ↦ C i ∘ Fin.revOrderIso ∘ toDual) = fun i ↦ rev_all_rows A i ∘ toDual := by
-  ext i j
-  simp [rev_all_rows, A, C]
-  fin_cases i ; fin_cases j <;> simp [Fin.last, Fin.rev]
+  ext i j; fin_cases i; fin_cases j <;> simp [rev_all_rows, A, C, Fin.rev]
 
 -- eample : B2 = := by
 --  ext
