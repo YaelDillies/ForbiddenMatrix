@@ -1,20 +1,7 @@
+import ForbiddenMatrix.Mathlib.Data.ZMod.Basic
 import ForbiddenMatrix.SmallPatterns
-import Mathlib.Data.ZMod.Basic
 import Mathlib.Tactic.Group
 import Mathlib.Tactic.Qify
-
-attribute [gcongr] Nat.sub_lt_sub_right
-
-instance Fin.instNontrivial {n : ℕ} [Fact <| 2 ≤ n] : Nontrivial (Fin n) :=
-  nontrivial_iff_two_le.2 Fact.out
-
-@[simp, norm_cast] lemma Fin.natCast_val_eq_zmodFinEquiv {n : ℕ} [NeZero n] (a : Fin n) :
-    a = ZMod.finEquiv n a := by
-  obtain _ | n := n
-  · obtain ⟨_, ⟨⟩⟩ := a
-  · change (⟨_, _⟩ : ZMod (n + 1)) = ⟨_, _⟩
-    congr
-    simp
 
 open Finset Set OrderDual Equiv
 
@@ -1027,6 +1014,6 @@ theorem ex_permPattern_le (σ : Perm (Fin k)) (n : ℕ) :
       _ = 2 * k ^ 4 * K * n := by ring
 
 theorem le_ex_permPattern (σ : Perm (Fin k)) (n : ℕ) (hk : 2 ≤ k) : n ≤ ex (PermPattern σ) n := by
-  have : Fact (2 ≤ k) := ⟨hk⟩
+  have : k.AtLeastTwo := ⟨hk⟩
   obtain ⟨a, b, hab⟩ := exists_pair_ne (Fin k)
   exact le_ex_self_of_two_points _ _ ⟨(a, σ a), (b, σ b), rfl, rfl, by aesop⟩
