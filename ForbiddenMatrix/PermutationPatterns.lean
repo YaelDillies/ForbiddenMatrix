@@ -918,7 +918,7 @@ theorem ex_permPattern_le (σ : Perm (Fin k)) (n : ℕ) :
   · simp [Subsingleton.elim σ (.refl _)]
   obtain rfl | hk₁ := eq_or_ne k 1
   · simp [Subsingleton.elim σ (.refl _)]
-  induction' n using Nat.strong_induction_on with n ih
+  induction n using Nat.strong_induction_on with | h n ih
   observe : k ^ 2 > 0
   observe : 0 < k
   have : k ≤ k ^ 2 := by
