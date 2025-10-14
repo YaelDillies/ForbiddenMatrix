@@ -112,10 +112,10 @@ def HatPattern : Fin 2 → Fin 3 → Prop :=
   match dominance with
   | .inl ⟨hab₁, hab₂⟩ =>
       exact ⟨![a.1, b.1], by simpa [StrictMono, Fin.forall_fin_two], ![a.2, b.2], by
-      simpa [StrictMono, Fin.forall_fin_two], by simp [Fin.forall_fin_two, IdentityPattern, *]⟩
+      simpa [StrictMono, Fin.forall_fin_two], by simp [IdentityPattern, *]⟩
   | .inr ⟨hab₁, hab₂⟩ =>
       exact ⟨![b.1, a.1], by simpa [StrictMono, Fin.forall_fin_two], ![b.2, a.2], by
-      simpa [StrictMono, Fin.forall_fin_two], by simp [Fin.forall_fin_two, IdentityPattern, *]⟩
+      simpa [StrictMono, Fin.forall_fin_two], by simp [IdentityPattern, *]⟩
 
 lemma ex_verticalPattern_two (n : ℕ) : ex (VerticalPattern 2) n = n := by
   classical
@@ -207,9 +207,7 @@ example (n : ℕ) : ex (HorizontalPattern 2) n ≤ n := by
     rintro ⟨f, hf, g, hg, prop⟩
     --  M2    g(0)
     -- f(0)    1
-    simp [M2] at prop
-    specialize prop 0 0
-    simp [AllPattern, Pred_min_Ofrow] at prop
+    simp [M2, TrivialPattern, AllPattern, Pred_min_Ofrow] at prop
     obtain ⟨hfa, a, ha, ha2⟩ := prop
     --  M  a g(0)
     -- f(0) 1 1
