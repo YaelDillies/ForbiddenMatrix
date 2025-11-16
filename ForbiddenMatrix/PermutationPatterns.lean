@@ -179,16 +179,10 @@ theorem den_eq_sum_blk_den (M : Fin n → Fin n → Prop) (hqn : q ∣ n) :
   simp only [mem_filter, Finset.mem_univ, true_and, exists_prop, exists_eq_right, s]
   refine ⟨hp.1, ?_⟩
   replace hp := hp.2
-  simp [rectPtset] at hp
+  simp [rectPtset, q.mul_comm] at hp
   obtain ⟨⟨p1l, p1h⟩, p2l, p2h⟩ := hp
-  simp [f, fq]
-  ext
-  · simp
-    have : ↑p.1 / q = k.1 := by apply Nat.div_eq_of_lt_le; rwa [mul_comm]; rwa [mul_comm]
-    aesop
-  · simp
-    have : ↑p.2 / q = k.2 := by apply Nat.div_eq_of_lt_le; rwa [mul_comm]; rwa [mul_comm]
-    aesop
+  simp [Q, Fin.ext_iff, Prod.ext_iff, f, fq]
+  constructor <;> apply Nat.div_eq_of_lt_le <;> assumption
 
 private lemma f_pt_to_blk {n q : ℕ} (hqn : q ∣ n) {i j : Fin (n / q)} {a b : Fin n}
     (H : (a, b) ∈ rectPtsetq n q i j) :
@@ -242,7 +236,7 @@ lemma den_submatrix_eq_sum_blk_den (M : Fin n → Fin n → Prop)
     suffices ∀ p : Q, B1 p.1 p.2 → (blk_den M p.1 p.2 = blk_den M1 p.1 p.2) by
       let s : Finset Q := {p : Q | B1 p.1 p.2}
       show ∑ p ∈ s, blk_den M p.1 p.2 = ∑ p ∈ s, blk_den M1 p.1 p.2
-      rw [Finset.sum_eq_sum_iff_of_le];aesop;aesop
+      rw [Finset.sum_eq_sum_iff_of_le] <;> aesop
     intro p hp
     simp [blk_den]
     suffices rectPtsetqMatrix M q p.1 p.2 = rectPtsetqMatrix M1 q p.1 p.2 by rw [this]
@@ -255,11 +249,7 @@ lemma den_submatrix_eq_sum_blk_den (M : Fin n → Fin n → Prop)
     intro hx hx2
     simp [B1, B, blkMatrix]
     obtain ⟨lx, rx⟩ : fq x.1 = p.1 ∧ fq x.2 = p.2 := f_pt_to_blk hqn hx
-    constructor
-    · use a, b
-      aesop
-    · aesop
-
+    exact ⟨⟨a, b, by aesop⟩, by aesop⟩
   simp at h_only_M1
   have := den_eq_sum_blk_den M1 hqn; simp at this
   simp [B1]
@@ -283,8 +273,7 @@ lemma split_density_blk {n q : ℕ} (hqn : q ∣ n) (M : Fin n → Fin n → Pro
 
     density M ≤ ∑ ⟨i, j⟩ : Q with B1 i j, blk_den M i j +
                 ∑ ⟨i, j⟩ : Q with B2 i j, blk_den M i j +
-                ∑ ⟨i, j⟩ : Q with N i j, blk_den M i j
-            := by
+                ∑ ⟨i, j⟩ : Q with N i j, blk_den M i j := by
   obtain rfl | hn := eq_zero_or_neZero n
   · simp [density, blkMatrix]
   obtain rfl | hq := eq_or_ne q 0
@@ -949,10 +938,7 @@ theorem ex_permPattern_le (σ : Perm (Fin k)) (n : ℕ) :
       observe o1 : n % k ^ 2 < k ^ 2
       calc
         0 < k ^ 2 - n % k ^ 2 := Nat.zero_lt_sub_of_lt o1
-        _ < n - n % k ^ 2 := by
-          rw [Nat.sub_lt_sub_iff_right]
-          exact h_k
-          exact Nat.le_of_succ_le o1
+        _ < n - n % k ^ 2 := by gcongr; exact o1.le
         _ = n' := by simp [n']
     observe o3 : NeZero n'
 
@@ -967,14 +953,15 @@ theorem ex_permPattern_le (σ : Perm (Fin k)) (n : ℕ) :
       have : k ^ 4 * (n' / k ^ 2) = k ^ 2 * n' := by
         suffices k ^ 4 * (n' / k ^ 2) = (k ^ 4/k ^ 2) * n' by
           rw [this]
-          rw [Nat.pow_div (Nat.le.step (Nat.le.step Nat.le.refl))]
+          rw [Nat.pow_div (by cutsat)]
           trivial
         have : k ^ 2 ∣ k ^ 4 := pow_dvd_pow _ <| by omega
         rw [Nat.pow_div]
+        any_goals trivial
         simp
         rw [← Nat.mul_div_assoc (k ^ 4), mul_comm, Nat.mul_div_assoc n' this, Nat.pow_div]
+        any_goals trivial
         simp [mul_comm]
-        all_goals trivial
       conv =>
         left
         conv =>
@@ -989,7 +976,7 @@ theorem ex_permPattern_le (σ : Perm (Fin k)) (n : ℕ) :
     have : (k - 1) ^ 2 + k + 1 ≤ k ^ 2 := by
       have : (k - 1) ^ 2 + k + 1 = k ^ 2 - k + 2 := by
         cases k
-        trivial
+        · trivial
         simp [pow_two, left_distrib]
         ring
       rw [this]

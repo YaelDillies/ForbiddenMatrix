@@ -19,7 +19,7 @@ def A' : Fin 2 → Fin 1 → Prop :=
 def B' : Fin 2 → (Fin 1) → Prop :=
   ![![false], ![true]]
 
-def tranpose (M : α → β → Prop) : β → α → Prop := fun x y ↦ M y x
+abbrev tranpose (M : α → β → Prop) : β → α → Prop := fun x y ↦ M y x
 def rev_all_rows (M : α → β → Prop) : α → βᵒᵈ → Prop := fun i ↦ M i ∘ ofDual
 def rot_cw (M : α → β → Prop) : β → αᵒᵈ → Prop := (rev_all_rows ∘ tranpose) M
 

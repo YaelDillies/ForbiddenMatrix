@@ -146,14 +146,7 @@ lemma ex_verticalPattern_two (n : ℕ) : ex (VerticalPattern 2) n = n := by
       simp [f] at ha' hb'
       rw [← ha'] at hb'
       omega
-
-    have dominance : (a.1 < b.1) ∨ (b.1 < a.1) := by
-      have : a.1 ≠ b.1 := ?_
-      aesop
-      by_contra a1b1
-      apply hab
-      aesop
-
+    have dominance : a.1 < b.1 ∨ b.1 < a.1 := by grind
     let g := ![a.2]
     have gmono : StrictMono g := by simp [StrictMono]
 
@@ -266,8 +259,8 @@ theorem ex_vertical (k n : ℕ) : ex (VerticalPattern k) n ≤ n*(k-1) := by
         ⟩
       contradiction
 
-    have dmeqdm' : density M = density M' := by
-      apply Finset.card_bij (fun a _ ↦ (a.2, a.1)) ?hi ?i_inj ?i_surj; aesop;aesop;aesop
+    have dmeqdm' : density M = density M' :=
+      Finset.card_equiv (Equiv.prodComm ..) fun _ ↦ by simp; rfl
 
     calc
       density M = density M' := dmeqdm'
