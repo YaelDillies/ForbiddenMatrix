@@ -16,6 +16,7 @@ variable {α β : Type*} [LinearOrder α] [LinearOrder β]
 
 def IdentityPattern (n : ℕ) (i j : Fin n) : Prop := i = j
 
+@[nolint unusedArguments]
 def AllPattern (m n : ℕ) : Fin m → Fin n → Prop := fun _ _ ↦ True
 abbrev VerticalPattern (m : ℕ) : Fin m → Fin 1 → Prop := AllPattern m 1
 abbrev HorizontalPattern (n : ℕ) : Fin 1 → Fin n → Prop := AllPattern 1 n
