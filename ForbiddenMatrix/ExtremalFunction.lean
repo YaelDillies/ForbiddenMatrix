@@ -51,10 +51,10 @@ lemma density_le_ex_of_not_contains (M : Fin n → Fin n → Prop) (AvoidP : ¬ 
 
 theorem split_density_to_rows {n : ℕ} (M : Fin n → Fin n → Prop) :
     density M = ∑ i, row_density M i := by
-  simp [density, row_density, card_eq_sum_ones, -sum_const]
-  exact Finset.sum_finset_product _ _ _ (by simp)
+  simpa [density, row_density, card_eq_sum_ones, -sum_const] using
+    Finset.sum_finset_product _ _ _ (by simp)
 
-theorem density_by_rows_ub {n c : ℕ}  (M : Fin n → Fin n → Prop)
+theorem density_by_rows_ub {n c : ℕ} (M : Fin n → Fin n → Prop)
     (h_row_density_bounded : ∀ i, row_density M i ≤ c) : density M ≤ n * c := calc
     density M
   _ = ∑ i, row_density M i := split_density_to_rows M
@@ -63,10 +63,10 @@ theorem density_by_rows_ub {n c : ℕ}  (M : Fin n → Fin n → Prop)
 
 theorem split_density_to_cols {n : ℕ} (M : Fin n → Fin n → Prop) :
     density M = ∑ i, col_density M i := by
-  simp [density, col_density, card_eq_sum_ones, -sum_const]
-  exact Finset.sum_finset_product_right _ _ _ (by simp)
+  simpa [density, col_density, card_eq_sum_ones, -sum_const]
+    using Finset.sum_finset_product_right _ _ _ (by simp)
 
-theorem density_by_cols_ub {n c : ℕ}  (M : Fin n → Fin n → Prop)
+theorem density_by_cols_ub {n c : ℕ} (M : Fin n → Fin n → Prop)
     (h_col_bounded : ∀ i, col_density M i ≤ c) : density M ≤ n * c := calc
       density M
   _ = ∑ i, col_density M i := split_density_to_cols M
@@ -77,11 +77,11 @@ def rectPtset (n a₁ b₁ a₂ b₂ : ℕ) : Finset (Fin n × Fin n) :=
   ({a | ↑a ∈ Finset.Ico a₁ b₁} : Finset (Fin n)) ×ˢ ({a | ↑a ∈ Finset.Ico a₂ b₂} : Finset (Fin n))
 
 open scoped Classical in noncomputable
-def rectPtsetMatrix {n : ℕ}(M : Fin n → Fin n → Prop) (a₁ b₁ a₂ b₂ : ℕ) : Finset (Fin n × Fin n) :=
+def rectPtsetMatrix {n : ℕ} (M : Fin n → Fin n → Prop) (a₁ b₁ a₂ b₂ : ℕ) : Finset (Fin n × Fin n) :=
   {(a, b) | M a b ∧ (a, b) ∈ (rectPtset n a₁ b₁ a₂ b₂)}
 
 open scoped Classical in noncomputable
-def rectPtsetSubsetMatrix {n : ℕ}(M : Fin n → Fin n → Prop) (R C : Finset (Fin n)) :
+def rectPtsetSubsetMatrix {n : ℕ} (M : Fin n → Fin n → Prop) (R C : Finset (Fin n)) :
     Finset (Fin n × Fin n) := {(a, b) | M a b ∧ (a, b) ∈ R ×ˢ C}
 
 lemma card_interval {n : ℕ} (x y : ℕ) (hy : y ≤ n) :
@@ -98,7 +98,7 @@ lemma card_interval {n : ℕ} (x y : ℕ) (hy : y ≤ n) :
   intro x y hy
   exact card_interval x y hy
 
-@[simp] lemma card_rectPtsetSubsetMatrix {n : ℕ}(M : Fin n → Fin n → Prop) (R C : Finset (Fin n)) :
+@[simp] lemma card_rectPtsetSubsetMatrix {n : ℕ} (M : Fin n → Fin n → Prop) (R C : Finset (Fin n)) :
     #(rectPtsetSubsetMatrix M R C) ≤ #R * #C := by
   calc
     #(rectPtsetSubsetMatrix M R C)
@@ -113,14 +113,13 @@ lemma density_mk_mem_product {n : ℕ} (I J : Finset (Fin n)) :
     density (fun i j ↦ (i, j) ∈ I ×ˢ J) = #I * #J := by simp [density_def, -mem_product]
 
 theorem den_all1_matrix_row_subset {n : ℕ} (I : Finset (Fin n)) :
-    let M (i j : Fin n) : Prop := (i, j) ∈ I ×ˢ  Finset.univ
+    let M (i j : Fin n) : Prop := (i, j) ∈ I ×ˢ Finset.univ
     density M = n * #I := by
-  extract_lets M
-  let J : Finset (Fin n) := Finset.univ
-  have := density_mk_mem_product I J
-  simp at this
-  rw [mul_comm]
-  convert this <;> aesop
+  simp only [density, Prod.mk.eta]
+  convert (Finset.card_product I (.univ : Finset <| Fin n)).trans _
+  · ext
+    simp
+  · simp [mul_comm]
 
 theorem den_all1_matrix_col_subset {n : ℕ} (I : Finset (Fin n)) :
     let M (i j : Fin n) : Prop := (i, j) ∈ Finset.univ ×ˢ I
@@ -160,8 +159,9 @@ theorem den_all1_matrix_single_row {n : ℕ} (x : Fin n) :
     density M = n := by
   extract_lets M
   have := den_all1_matrix_row_interval x x
-  simp [density] at this
-  simp [density, M]
+  simp only [density, Icc_self, mem_singleton, Prod.mk.eta, mem_product, mem_filter, mem_univ,
+    true_and, and_true, add_tsub_cancel_left, mul_one] at this
+  simp only [density, M]
   convert this
   aesop
 
@@ -170,8 +170,9 @@ theorem den_all1_matrix_single_col {n : ℕ} (x : Fin n) :
     density M = n := by
   extract_lets M
   have := den_all1_matrix_column_interval x x
-  simp [density] at this
-  simp [density, M]
+  simp only [density, Icc_self, mem_singleton, Prod.mk.eta, mem_product, mem_univ, mem_filter,
+    true_and, add_tsub_cancel_left, mul_one] at this
+  simp only [density, M]
   convert this
   aesop
 

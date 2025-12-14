@@ -68,38 +68,31 @@ def HatPattern : Fin 2 → Fin 3 → Prop :=
   simp only [ex, Finset.sup_le_iff, mem_filter, Finset.mem_univ, true_and]
   intro M
   contrapose
-  simp [density]
+  simp only [density, not_le]
   intro M_has_two_n_points
-
   let f : Fin n × Fin n → ℤ := fun ⟨i, j⟩ ↦ i - j
   let s := (filter (fun (i, j) ↦ M i j) univ)
   have : s.card > 2*n-1 := by aesop
   let t : Finset ℤ := Icc (-n + 1) (n - 1)
   have tcardeq2nm1 : t.card = 2*n -1 := by
-    simp [t]
+    simp only [Int.card_Icc, sub_add_cancel, t]
     cases n
     · contradiction
     simp
     omega
   let k := 1
-
   have hf ⦃a⦄ (_ : a ∈ s) : f a ∈ t := by simp [f, t]; omega
-
   have hn : t.card * k < s.card := by
-    simp [k, s, t]
+    simp only [Int.card_Icc, sub_add_cancel, mul_one, t, k, s]
     cases n
     · contradiction
     simp
     omega
-
   obtain ⟨y, hy, hy'⟩ := exists_lt_card_fiber_of_mul_lt_card_of_maps_to hf hn
   simp only [k] at hy'
   rw [one_lt_card] at hy'
   simp only [mem_filter, ne_eq] at hy'
-  obtain ⟨a, ha, b, hb, hab⟩ := hy'
-  obtain ⟨ha, ha'⟩ := ha
-  obtain ⟨hb, hb'⟩ := hb
-
+  obtain ⟨a, ⟨ha, ha'⟩, b, ⟨hb, hb'⟩, hab⟩ := hy'
   have ⦃x⦄ (ha : x ∈ s) : M x.1 x.2 := by aesop
   have hmaa : M a.1 a.2 := by aesop
   have hmbb : M b.1 b.2 := by aesop
@@ -109,7 +102,7 @@ def HatPattern : Fin 2 → Fin 3 → Prop :=
     simp only [f] at hb'
     rw [sub_eq_sub_iff_add_eq_add] at hb'
     omega
-  simp [Contains]
+  simp only [Contains, Fin.forall_fin_two, Fin.isValue]
   match dominance with
   | .inl ⟨hab₁, hab₂⟩ =>
       exact ⟨![a.1, b.1], by simpa [StrictMono, Fin.forall_fin_two], ![a.2, b.2], by
@@ -121,13 +114,11 @@ def HatPattern : Fin 2 → Fin 3 → Prop :=
 lemma ex_verticalPattern_two (n : ℕ) : ex (VerticalPattern 2) n = n := by
   classical
   refine le_antisymm ?_ ?_
-  · rw [ex]
-    simp
+  · simp only [ex, Finset.sup_le_iff, mem_filter, Finset.mem_univ, true_and]
     intro M
     contrapose
-    simp [density]
+    simp only [density, not_le]
     intro more_than_n
-
     let f : Fin n × Fin n → ℕ := fun ⟨i, j⟩ ↦ j
     let s := (filter (fun (i, j) ↦ M i j) univ)
     have : s.card > n := by aesop
@@ -144,13 +135,12 @@ lemma ex_verticalPattern_two (n : ℕ) : ex (VerticalPattern 2) n = n := by
     obtain ⟨hb, hb'⟩ := hb
     rw [Contains]
     have : a.2 = b.2 := by
-      simp [f] at ha' hb'
+      simp only [f] at ha' hb'
       rw [← ha'] at hb'
       omega
     have dominance : a.1 < b.1 ∨ b.1 < a.1 := by grind
     let g := ![a.2]
     have gmono : StrictMono g := by simp [StrictMono]
-
     cases dominance with
     | inl ab =>
       refine ⟨![a.1, b.1], by  simpa [f, StrictMono, Fin.forall_fin_two], g, gmono, ?_⟩
@@ -165,7 +155,7 @@ lemma ex_verticalPattern_two (n : ℕ) : ex (VerticalPattern 2) n = n := by
     · simp
     refine (le_ex_iff _ ⟨0, by simp [AllPattern]⟩).2 ⟨fun i j ↦ i = 0, ?_, ge_of_eq ?_⟩
     · rintro ⟨f, hf, g, hg, prop⟩
-      simp [Fin.forall_fin_two, AllPattern] at prop
+      simp only [AllPattern, forall_const, Fin.forall_fin_two, Fin.isValue] at prop
       exact (hf Fin.zero_lt_one).ne <| prop.1.trans prop.2.symm
     · calc  density _
         _ = #{x : Fin n × Fin n | x.1 = 0} := density_def _
@@ -174,19 +164,18 @@ lemma ex_verticalPattern_two (n : ℕ) : ex (VerticalPattern 2) n = n := by
 
 example (n : ℕ) : ex (HorizontalPattern 2) n ≤ n := by
   classical
-  simp [ex]
+  simp only [ex, Finset.sup_le_iff, mem_filter, Finset.mem_univ, true_and]
   intro M noH2P
   let Pred_min_Ofrow := fun i j ↦ ∀ j', M i j' → j ≤ j'
   let M1 (i j : Fin n) : Prop := M i j ∧ Pred_min_Ofrow i j
   let M2 (i j : Fin n) : Prop := M i j ∧ ¬ Pred_min_Ofrow i j
-
   have dm1 : density M1 ≤ n := by
     have h_row_one i : row_density M1 i ≤ 1 := by
       by_contra H
-      simp [row_density, one_lt_card_iff] at H
+      simp only [row_density, not_le, one_lt_card_iff, mem_filter, Finset.mem_univ, true_and, ne_eq,
+        exists_and_left] at H
       obtain ⟨a, ha, b, hb, aneqb⟩ := H
-      simp [M1, Pred_min_Ofrow] at ha
-      simp [M1, Pred_min_Ofrow] at hb
+      simp only [M1, Pred_min_Ofrow] at ha hb
       have : a = b := by
         refine Fin.le_antisymm ?h1 ?h2
         · -- a ≤ b
@@ -201,7 +190,8 @@ example (n : ℕ) : ex (HorizontalPattern 2) n ≤ n := by
     rintro ⟨f, hf, g, hg, prop⟩
     --  M2    g(0)
     -- f(0)    1
-    simp [M2, TrivialPattern, AllPattern, Pred_min_Ofrow] at prop
+    simp only [TrivialPattern, AllPattern, not_forall, not_le, forall_const, Fin.forall_fin_one,
+      Fin.isValue, M2, Pred_min_Ofrow] at prop
     obtain ⟨hfa, a, ha, ha2⟩ := prop
     --  M  a g(0)
     -- f(0) 1 1
@@ -213,7 +203,6 @@ example (n : ℕ) : ex (HorizontalPattern 2) n ≤ n := by
         density M2
     _ ≤ ex TrivialPattern n := density_le_ex_of_not_contains M2 M2_avoids_trivial
     _ = 0 := ex_trivialPattern n
-
   calc
         density M
     _ = density M1 + density M2 := split_density M Pred_min_Ofrow
@@ -231,9 +220,9 @@ theorem ex_horizontal (k n : ℕ) : ex (HorizontalPattern k) n ≤ n*(k-1) := by
   let s : Finset (Fin n) := {j | M i j}
   have h : k ≤ s.card := by simp [s]; omega
   let g := s.orderEmbOfCardLe h
-  simp [Contains]
+  simp only [Contains, Fin.forall_fin_one, Fin.isValue]
   refine ⟨![i], by simp [StrictMono], g, by simp [StrictMono, OrderEmbedding.lt_iff_lt], ?_⟩
-  simp [AllPattern]
+  simp only [Fin.isValue, AllPattern, Matrix.cons_val_fin_one, forall_const]
   intro j
   simpa [s] using s.orderEmbOfCardLe_mem h j
 
@@ -244,9 +233,8 @@ theorem ex_vertical (k n : ℕ) : ex (VerticalPattern k) n ≤ n*(k-1) := by
     _ ≤ ex ( tranpose (VerticalPattern k)) n := ?exv
     _ = ex ( HorizontalPattern k) n := by rfl
     _ ≤ n*(k-1) := ex_horizontal k n
-
   case exv =>
-    simp [ex]
+    simp only [ex, Finset.sup_le_iff, mem_filter, Finset.mem_univ, true_and]
     intro M hM
     rw [← ex]
     let M' := tranpose M
@@ -259,10 +247,8 @@ theorem ex_vertical (k n : ℕ) : ex (VerticalPattern k) n ≤ n*(k-1) := by
           apply emb_pat_to_M'
         ⟩
       contradiction
-
     have dmeqdm' : density M = density M' :=
       Finset.card_equiv (Equiv.prodComm ..) fun _ ↦ by simp; rfl
-
     calc
       density M = density M' := dmeqdm'
       _        ≤ ex (tranpose (VerticalPattern k)) n := (density_le_ex_of_not_contains M' hM')
@@ -270,20 +256,18 @@ theorem ex_vertical (k n : ℕ) : ex (VerticalPattern k) n ≤ n*(k-1) := by
 
 theorem ex_hat (n : ℕ) : ex HatPattern n ≤ 3 * n := by
   classical
-  simp [ex]
+  simp only [ex, Finset.sup_le_iff, mem_filter, Finset.mem_univ, true_and]
   intro M noHat
-
   let min_or_max_of_row := fun i j ↦ (∀ j', M i j' → j ≤ j') ∨ (∀ j', M i j' → j' ≤ j)
   let M1 (i j : Fin n) : Prop := M i j ∧ (min_or_max_of_row i j)
   let M2 (i j : Fin n) : Prop := M i j ∧ ¬ (min_or_max_of_row i j)
-
   have M1_avoids_H3 : ¬ Contains (HorizontalPattern 3) M1 := by
     rintro ⟨f, _, g, g_mono, prop⟩
-    simp [Fin.forall_fin_one, AllPattern] at prop
+    simp only [AllPattern, forall_const, Fin.forall_fin_one, Fin.isValue] at prop
     -- prop :
     -- M1   g(0) g(1) g(2)
     -- f(0) 1   1   1
-    simp [M1] at prop
+    simp only [Fin.isValue, M1] at prop
     obtain ⟨_, h_min_max_g1⟩ : M (f 0) (g 1) ∧ min_or_max_of_row (f 0) (g 1) := prop 1
     -- since g(1) in M1, g(1) is either min or max
     cases h_min_max_g1 with
